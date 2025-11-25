@@ -1,0 +1,213 @@
+### --------------------- variables --------------------- ###
+
+# ensemble params
+variable knb               index 1.5e9
+variable knc               index 1e5 
+variable eps_crit          index 0.00001
+variable member            index -999
+variable max_wind_speed    index 20
+variable rho_i             index 920
+variable parent_dir_name   index "ensemble_name"
+
+# ice props
+variable domain_scaling     index 1
+variable radius             index 500
+variable r_L                equal ${radius}*${domain_scaling}                      # [m] large particle radius
+variable r_S                equal ${r_L}*3/5                                       # [m] small particle radius
+variable rmax_multiplier    equal 1.5
+variable natoms             index 2936
+
+# derived
+variable r_LS               equal (${r_S}+${r_L})/2
+variable d_L                equal ${r_L}*2        
+variable d_S                equal ${r_S}*2        
+variable d_LS               equal (${d_S}+${d_L})/2
+
+variable rmax_S             equal ${rmax_multiplier}*${d_S}
+variable rmax_LS            equal ${rmax_multiplier}*${d_LS}
+variable rmax_L             equal ${rmax_multiplier}*${d_LS}
+
+variable m_L                equal PI*${r_L}^2*${rho_i}
+variable m_S                equal PI*${r_S}^2*${rho_i}
+
+variable dampc              equal sqrt(${m_S}*${knc})
+variable dampb              equal sqrt(${m_S}*${knb})
+
+variable av_L               equal 50*${knc}/(2*${r_L})^2
+variable av_LS              equal 50*${knc}/(2*${r_LS})^2
+variable av_S               equal 50*${knc}/(2*${r_S})^2
+
+# domain
+variable wall_width         equal 10e3*${domain_scaling}
+variable domain_width       equal 140e3*${domain_scaling}
+variable domain_height      equal 240e3*${domain_scaling}
+variable channel_width      equal 40e3*${domain_scaling}
+variable channel_bottom     equal 80e3*${domain_scaling}
+variable channel_narrowing  equal 160e3*${domain_scaling}
+variable y0                 equal 0*${domain_scaling}
+variable zr                 equal 5000*${domain_scaling}
+
+variable left_wall          equal ${wall_width}                      
+variable right_wall         equal ${domain_width} - ${wall_width}   
+variable left_channel_wall  equal (${domain_width} - ${channel_width})/2
+variable right_channel_wall equal ${domain_width} - ${left_channel_wall}
+
+
+variable x1                 equal -10e3*${domain_scaling}
+variable x2                 equal 150e3*${domain_scaling}
+variable y1                 equal -100e3*${domain_scaling}
+variable y2                 equal 260e3*${domain_scaling}
+variable zd                 equal 10000*${domain_scaling}
+
+# forcing
+variable rho_o              index 1027        # [kg/m3] seawater density
+variable rho_a              index 1           # [kg/m3] atmosphere density
+variable drag_o             equal 0.0055      # [-] ocean drag coefficient
+variable drag_a             index 0.0012      # [-] atmos drag coefficient
+variable power              index 1
+
+# numerics
+variable dt                 equal 0.1*sqrt(${m_S}/${knb}) # Clemmer et al 2025 
+variable comm_dist          equal 6*${r_L}
+variable neigh_bin_ini      equal 1.5*${r_L}  
+
+# output 
+variable T_max              index 36 
+variable run_time           equal ${T_max}*3600                         # [s] runtime
+       
+variable num_timesteps      equal floor(${run_time}/${dt})
+variable num_dumps          equal 500   
+variable dump_freq          equal floor(${num_timesteps}/${num_dumps})
+variable dump_freq_indiv    equal floor(${num_timesteps}/10)
+variable thermo_freq        equal 10*${dump_freq}
+
+variable outdir             string "/scratch/groups/earlew/arlenlex/P1-model-dev/nares/${parent_dir_name}/lammps_output/"
+shell    mkdir ${outdir}
+variable outfile_name       string "dump${member}.lammps"
+variable atomfile_dir       index "/scratch/groups/earlew/arlenlex/P1-EKI-nares/packing/nares/atomfiles_test/" # just use any packing from noise experiments
+
+
+### --------------------- simulation setup --------------------- ###
+
+# setup
+units           si
+dimension       2
+boundary        p p p
+atom_style      bond
+newton          off off
+comm_modify     vel yes cutoff ${comm_dist}
+special_bonds   lj 0.0 1.0 1.0 coul 0.0 1.0 1.0
+processors      * * *
+
+# create domain
+region              domain block ${x1} ${x2} ${y1} ${y2}  -${zd} ${zd} units box
+create_box          2 domain bond/types 1 extra/bond/per/atom 16 extra/special/per/atom 48
+
+# create particles
+create_atoms        1 random ${natoms} 129741 domain units box              # just need to create same number as total number of atoms
+
+variable xpos_unscaled       atomfile ${atomfile_dir}x.data
+variable ypos_unscaled       atomfile ${atomfile_dir}y.data
+variable atomtype            atomfile ${atomfile_dir}type.data
+
+variable xpos               atom v_xpos_unscaled*${domain_scaling} 
+variable ypos               atom v_ypos_unscaled*${domain_scaling} 
+
+set             group all x v_xpos y v_ypos z 0 type v_atomtype
+
+mass            1 ${m_L}
+mass            2 ${m_S} 
+
+# create regions
+region          box1 block  ${left_channel_wall}   ${right_channel_wall}  ${y0} ${domain_height}  -${zr} ${zr} units box
+region          box2 block  ${left_wall}   ${left_channel_wall} ${channel_narrowing} ${domain_height}  -${zr} ${zr} units box
+region          box3 block  ${right_channel_wall}  ${right_wall} ${channel_narrowing} ${domain_height}  -${zr} ${zr} units box
+
+region          tri1 cone x ${channel_narrowing}      ${y0}      ${y0}  ${channel_width}  ${left_wall}   ${left_channel_wall} units box
+region          tri2 cone x ${channel_narrowing}      ${y0}  ${channel_width}      ${y0}  ${right_channel_wall}  ${right_wall} units box
+
+region          tri3 prism  ${left_wall}   ${left_channel_wall}      ${y0}  ${channel_bottom}  -${zr}  ${zr}  ${channel_width} 0 0 units box
+region          tri4 prism  ${right_channel_wall}  ${right_wall}      ${y0}  ${channel_bottom}  -${zr}  ${zr} -${channel_width} 0 0 units box
+
+region          interior_particles_region union 7 box1 box2 box3 tri1 tri2 tri3 tri4
+
+group           active region interior_particles_region
+group           walls subtract all active
+
+# create a psuedo variable for particle radii
+
+group           large type 1
+group           small type 2
+variable        r atom gmask(large)*${r_S}+${r_L}
+variable        ingroup atom gmask(active)
+
+# setup contacts
+neighbor        ${neigh_bin_ini} bin
+
+pair_style      bpm/spring anharmonic yes
+pair_coeff      1 1 ${knc} ${d_L}  ${dampc} ${av_L}
+pair_coeff      1 2 ${knc} ${d_LS} ${dampc} ${av_LS}
+pair_coeff      2 2 ${knc} ${d_S}  ${dampc} ${av_S}
+
+
+# install bonds
+fix             integrate_all all nve
+timestep        ${dt}
+create_bonds    many small small 1 0 ${rmax_S}
+create_bonds    many large small 1 0 ${rmax_LS}
+create_bonds    many large large 1 0 ${rmax_L}
+unfix integrate_all
+
+
+# set bond style
+neighbor        ${r_L} bin
+special_bonds   lj 0.0 1.0 1.0 coul 1.0 1.0 1.0
+bond_style      bpm/spring overlay/pair no smooth yes normalize no 
+bond_coeff      1 ${knb} ${eps_crit} ${dampb}
+
+# global computes & fixes
+fix             2d_sim all enforce2d
+compute         nbond  all nbond/atom
+compute         tbond all reduce sum c_nbond
+compute         peratom_stress all stress/atom NULL
+variable        sxx atom c_peratom_stress[1]/(PI*v_r^2) # assuming small deformation
+variable        sxy atom c_peratom_stress[4]/(PI*v_r^2)
+variable        syy atom c_peratom_stress[2]/(PI*v_r^2)
+
+run 0
+fix             ini_bonds all store/state 0 c_nbond
+variable        nb_diff atom c_nbond-f_ini_bonds
+run 1
+
+### -------------------- forcing and running --------------------- ###
+
+# Forcing stuff 
+variable current_step         equal step
+variable current_time         equal v_current_step*${dt}
+variable dynamic_wind_speed   equal ${max_wind_speed}*(v_current_time/${run_time})^${power}
+
+variable ocean_skin_coeff           atom ${rho_o}*${drag_o}*PI*v_r^2
+variable atmos_skin_coeff           atom ${rho_a}*${drag_a}*PI*v_r^2
+                                                   
+variable u_atmos_y_dyn              atom v_dynamic_wind_speed*-1   # should increase from 0 to 22 over 24 hrs
+
+variable Fdrag_atmos_y              atom v_atmos_skin_coeff*abs(v_u_atmos_y_dyn)*v_u_atmos_y_dyn
+variable Fdrag_ocean_x              atom v_ocean_skin_coeff*sqrt(vx^2+vy^2)*(-vx)
+variable Fdrag_ocean_y              atom v_ocean_skin_coeff*sqrt(vx^2+vy^2)*(-vy)
+
+variable dragx                      atom v_Fdrag_ocean_x
+variable dragy                      atom v_Fdrag_atmos_y+v_Fdrag_ocean_y
+
+fix      apply_increasing_winds active addforce v_dragx v_dragy 0 
+
+thermo_style    custom atoms step time cpu ke c_tbond v_dynamic_wind_speed
+thermo          ${thermo_freq}
+thermo_modify   lost ignore lost/bond ignore norm no
+
+dump            1 all custom ${dump_freq} ${outdir}${outfile_name} id type x y vx vy v_ingroup v_r c_nbond v_nb_diff c_peratom_stress[1] c_peratom_stress[4] c_peratom_stress[2] v_sxx v_syy v_sxy
+
+fix             integrate_active active nve
+
+
+run      ${num_timesteps} 
+unfix    apply_increasing_winds
