@@ -1,0 +1,103 @@
+# Clemmer et al 2024 packing protocol
+
+# Creates packing of bidisperse particles with r_S = 3/5 * r_L and
+# the ratio of large to small particles = (1+sqrt5)/4. The packing
+# fraction is phi = 0.71.
+# Type 1 particles are large and type 2 particles are small. 
+# The domain is scaled to determine the particle size and r_L = 1.0001 
+# to prevent small overlaps. The post processing script create_atomfiles.py
+# will scale the particle positions accordingly. 
+
+# Index variables should be speceified in the bash script used to run 
+# this script. 
+
+### -------------------------------- variables ---------------------------------- ###
+
+variable r_L            equal 1*1.0001         # radius of type 1 particles
+variable r_S            equal 3/5*${r_L}       # radius of type 2 particles
+variable d_L            equal 2*${r_L}         # diameter of type 1 particles
+variable d_S            equal 2*${r_S}         # diameter of type 2 particles
+variable d_LS           equal (${d_L}+${d_S})/2
+variable mass           equal 1                # particle mass
+variable A              equal 1                # energy coeff for contact law
+
+variable H              index 240.0            # domain side length
+variable W              index 140.0     
+
+variable phi            equal 0.71             # packing fraction
+
+variable L2S            equal (1+sqrt(5))/4    # ratio of large to small particles
+
+variable domain_vol     equal ${H}*${W}        # domain volume
+variable vol1           equal PI*${r_L}^2      # volume of large particles
+variable vol2           equal PI*${r_S}^2      # volume of small particles
+
+variable N2             equal floor(${phi}*${domain_vol}/(PI*(${L2S}+${vol2}/${vol1}))) # number small particles
+variable N1             equal floor(${L2S}*${N2})                                       # number large particles
+variable N_total        equal ${N1}+${N2}                                               # total number of particles
+print "N_total = ${N_total}"
+
+variable seed1          index 198723
+variable seed2          index 290341
+
+variable outdir         index "output_directory"
+shell                   mkdir ${outdir}
+variable outfile_name   index "datafile_${W}x${H}_s${seed1}.lammps"
+
+### -------------------------------- simulation setup ---------------------------------- ###
+
+units           lj
+dimension       2
+boundary        p p p
+atom_style      sphere
+processors      * * *
+
+# make domain
+region          domain block 0 ${W} 0 ${H} -0.1 0.1 units box # z dimension is irrelevant here but still must be specified
+create_box      2 domain
+
+# create particles
+create_atoms    1 random ${N1} ${seed1} domain
+create_atoms    2 random ${N2} ${seed2} domain
+
+# set particle diameters and masses
+set             type 1 diameter ${d_L} mass ${mass}
+set             type 2 diameter ${d_S} mass ${mass}
+
+# define soft cosine potential pair interactions to handle the initial large overlaps
+neighbor        0.3 bin
+
+pair_style      soft ${d_L}
+pair_coeff      1 1 ${A} ${d_L}
+pair_coeff      1 2 ${A} ${d_LS}
+pair_coeff      2 2 ${A} ${d_S}
+
+### -------------------------------- running ---------------------------------- ###
+
+# integration
+timestep        0.1
+fix             integrator all nve
+fix             2d all enforce2d
+
+# thermo
+thermo_style    custom step ke atoms
+thermo          2000
+thermo_modify   lost ignore
+
+# (1) remove initial large overlaps
+fix             visc1 all viscous 1.0
+run             5000
+
+# (2) increase the granular temperature by removing damping & randomly assigning velocities w/ rms 0.03
+unfix           visc1
+velocity        all create 0.03 98765 mom yes rot yes dist uniform
+run             10000
+
+# (3) quench simulation by adding back damping
+fix             visc2 all viscous 0.5
+run             30000
+unfix           visc2
+
+# (4) save final packing
+dump final all custom 1 ${outdir}${outfile_name} id type x y
+run 0 
