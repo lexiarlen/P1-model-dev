@@ -6,16 +6,16 @@
 # ensemble config
 variable L_pack             index '100'
 variable natoms             index 3496
+variable knb                index 1e9                       # [N/m] bond stiffness
+variable eps_crit           index 0.00005                   # [-] critical strain
 
 # ice properties / domain
 variable L                  equal 100e3                     # [m] domain side length
 variable rho_i              equal 920                       # [kg/m^3] ice density
 variable r_L                equal ${L}/${L_pack}            # [m] large particle radius
 variable r_S                equal floor(3/5*${r_L})         # [m] small particle radius
-variable knb                equal 1e9                       # [N/m] bond stiffness
 variable knc                equal 1e5                       # [N/m] contact stiffness
 variable rmax_multiplier    equal 1.5                       # [-] maximum bonding distance multiplier FIX
-variable sig                equal 75000                     # [N/m] bond "strength" 
 
 # ice properties derived
 variable r_LS               equal (${r_L}+${r_S})/2         # [m] combined large and small particle radii
@@ -29,8 +29,6 @@ variable rmax_L             equal ${rmax_multiplier}*${d_L}
 
 variable m_L                equal PI*${r_L}^2*${rho_i}     # [kg] large particle mass
 variable m_S                equal PI*${r_S}^2*${rho_i}     # [kg] small particle mass
-
-variable eps_crit           equal ${sig}/${knb}            # [-] critical strain
 
 variable dampc              equal sqrt(${m_S}*${knc})      # [kg/s] contact damping
 variable dampb              equal sqrt(${m_S}*${knb})      # [kg/s] bond damping
@@ -48,7 +46,7 @@ variable shear_rate         equal 1e-7
 # numerics
 variable comm_dist          equal 6*${r_L}                   # [m] communication distance
 variable neigh_bin_ini      equal ${rmax_multiplier}*${r_L}  # [m] initial neighbor bin distance for bonding; reduce to r_L later
-variable dt                 equal 0.1*sqrt(${m_S}/${knb})    # [s] from Clemmer et al 2025                  
+variable dt                 index 0.1                        # [s] specify in input file so we get nice dump frequency for comparison                 
 variable run_time           index 0.5*3600                   # [s] runtime
 
 # output

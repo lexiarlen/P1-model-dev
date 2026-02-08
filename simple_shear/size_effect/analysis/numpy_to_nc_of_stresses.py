@@ -62,7 +62,7 @@ def main():
                 base = os.path.splitext(os.path.basename(fname))[0][:-7]
                 fpath = os.path.join(directory, f'{base}_shear.npy')
                 stress = np.load(fpath)
-                all_stress_data[:, j, k] = stress
+                all_stress_data[:, j, k] = stress[:500]
 
     # ------- create dataset ------- 
     ds = xr.Dataset(

@@ -32,9 +32,7 @@ def main():
     outputdir = os.path.join(datadir, 'figures')
     os.makedirs(outputdir, exist_ok=True)
 
-    # ----- hard coding file parsing and shear calculation -----
-    Ls = np.array(['100', '200', '300', '400', '500', '600'])
-    natoms_list = np.array(['3496', '13987', '31473', '55952', '87426', '125893'])
+    # ----- hard coding shear calculation -----
 
     phi = 0.71
     L_ini = 100e3

@@ -12,7 +12,7 @@ module load lammps_lexi chemistry
 
 s=8302
 
-mpirun -oversubscribe -n 4 lmp \
+mpirun -oversubscribe -n 2 lmp \
         -var L_pack "300" \
         -var natoms  "31473" \
         -var atomfile_dir "/oak/stanford/groups/earlew/arlenlex/P1-model-dev/packing/size-effect/ensemble/L${L}/atomfiles_s${s}/" \
@@ -20,5 +20,8 @@ mpirun -oversubscribe -n 4 lmp \
         -var outfile_name "N${N}Dump_seed${s}_1000hours.lammps" \
         -var run_time "3600000" \
         -var num_dumps "1000" \
+        -var dt "0.025" \
+        -var knb "1e9" \
+        -var eps_crit "0.00005" \ 
         -in  /home/groups/earlew/arlenlex/P1-model-dev/simple_shear/in.shear \
         -log none
