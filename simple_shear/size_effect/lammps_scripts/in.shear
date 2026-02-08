@@ -14,7 +14,7 @@ variable r_L                equal ${L}/${L_pack}            # [m] large particle
 variable r_S                equal floor(3/5*${r_L})         # [m] small particle radius
 variable knb                equal 1e9                       # [N/m] bond stiffness
 variable knc                equal 1e5                       # [N/m] contact stiffness
-variable rmax_multiplier    equal 1.5                       # [-] maximum bonding distance multiplier
+variable rmax_multiplier    equal 1.5                       # [-] maximum bonding distance multiplier FIX
 variable sig                equal 75000                     # [N/m] bond "strength" 
 
 # ice properties derived
@@ -27,17 +27,17 @@ variable rmax_S             equal ${rmax_multiplier}*${d_S}
 variable rmax_LS            equal ${rmax_multiplier}*${d_LS}
 variable rmax_L             equal ${rmax_multiplier}*${d_L}
 
-variable m_L                equal PI*${r_L}^2*${rho_i}      # [kg] large particle mass
-variable m_S                equal PI*${r_S}^2*${rho_i}      # [kg] small particle mass
+variable m_L                equal PI*${r_L}^2*${rho_i}     # [kg] large particle mass
+variable m_S                equal PI*${r_S}^2*${rho_i}     # [kg] small particle mass
 
-variable eps_crit           equal ${sig}/${knb}             # [-] critical strain
+variable eps_crit           equal ${sig}/${knb}            # [-] critical strain
 
-variable dampc              equal sqrt(${m_S}*${knc})       # [kg/s] contact damping
-variable dampb              equal sqrt(${m_S}*${knb})       # [kg/s] bond damping
+variable dampc              equal sqrt(${m_S}*${knc})      # [kg/s] contact damping
+variable dampb              equal sqrt(${m_S}*${knb})      # [kg/s] bond damping
 
-variable av_L               equal 50*${knc}/(2*${r_L})^2    # [kg/m^2/s^2] large particle contact anharmonic coeff
-variable av_LS              equal 50*${knc}/(2*${r_LS})^2   # [kg/m^2/s^2] large and small particle contact anharmonic coeff
-variable av_S               equal 50*${knc}/(2*${r_S})^2    # [kg/m^2/s^2] small particle contact anharmonic coeff
+variable av_L               equal 50*${knc}/(2*${r_L})^2   # [kg/m^2/s^2] large particle contact anharmonic coeff
+variable av_LS              equal 50*${knc}/(2*${r_LS})^2  # [kg/m^2/s^2] large and small particle contact anharmonic coeff
+variable av_S               equal 50*${knc}/(2*${r_S})^2   # [kg/m^2/s^2] small particle contact anharmonic coeff
 
 # initial conditions
 variable atomfile_dir       index '/path/to/atomfiles/'
@@ -46,18 +46,18 @@ variable atomfile_dir       index '/path/to/atomfiles/'
 variable shear_rate         equal 1e-7
 
 # numerics
-variable comm_dist          equal 10*${r_L}                  # [m] communication distance
+variable comm_dist          equal 6*${r_L}                   # [m] communication distance
 variable neigh_bin_ini      equal ${rmax_multiplier}*${r_L}  # [m] initial neighbor bin distance for bonding; reduce to r_L later
 variable dt                 equal 0.1*sqrt(${m_S}/${knb})    # [s] from Clemmer et al 2025                  
-variable run_time           equal 1000*3600                  # [s] runtime
+variable run_time           equal 0.5*3600                   # [s] runtime
 
 # output
 variable out_dir            index "/path/to/dumped/data/"
 shell mkdir ${out_dir}
 variable outfile_name       index "xxx.lammps"
 
-variable num_timesteps      equal floor(${run_time}/${dt})
-variable num_dumps          equal 1000                                       
+variable num_timesteps      equal floor(${run_time}/${dt})                  # CHNAGE TO CEILING?
+variable num_dumps          equal 200                                       # FIX
 variable dump_freq          equal floor(${num_timesteps}/${num_dumps})
 variable thermo_freq        equal 20*${dump_freq}
 
@@ -78,7 +78,7 @@ region              domain prism 0 ${L} 0 ${L} -${d_S} ${d_S} 0 0 0 units box
 create_box          2 domain bond/types 1 extra/bond/per/atom 16 extra/special/per/atom 48
 
 # create particles by random insertion followed by position assignment
-create_atoms        1 random ${natoms} 12908741 domain              # just need to create same number as total number of atoms
+create_atoms        1 random ${natoms} 12908741 domain              
 
 variable xpos       atomfile ${atomfile_dir}x.data 
 variable ypos       atomfile ${atomfile_dir}y.data 

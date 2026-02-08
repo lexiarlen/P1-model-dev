@@ -10,7 +10,6 @@ import matplotlib as mpl
 def get_stress(filename, volume, phi, outputdir):
     pipeline = import_file(filename)
 
-    time_steps = []
     total_sxy = []
 
     # get stress from each timestep with ovito

@@ -10,8 +10,6 @@ module purge
 module use /home/groups/earlew/arlenlex/.local/modulefiles
 module load lammps_lexi chemistry
 
-EXEC="lmp"
-
 # 1) create 6 differently seeded packings for each domain size = 100e3/L
 Ls=(100 200 300 400 500 600)
 seeds1=(9834 1825 2893 2283 1923)               
@@ -21,11 +19,11 @@ for L in "${Ls[@]}"; do
         s1=${seeds1[$idx]}
         s2=${seeds2[$idx]}
         mpirun -oversubscribe -np 2 \
-        $EXEC -var H "${L}" -var W "${L}" \
+        lmp -var H "${L}" -var W "${L}" \
         -var seed1 "${s1}" -var seed2 "${s2}" \
         -var outdir "/scratch/groups/earlew/arlenlex/P1-model-dev/packing/size-effect/ensemble/L${L}/" \
         -var outfile_name "datafile_s${s2}.lammps" \
-        -in /home/groups/earlew/arlenlex/P1-model-dev/packing/in.pack \
+        -in /home/groups/earlew/arlenlex/P1-model-dev/packing/lammps_scripts/in.pack \
         -log none
     done
 done
@@ -39,7 +37,7 @@ export PATH="$CONDA_PREFIX/bin:$PATH"
 true_L=100000
 for L in "${Ls[@]}"; do
     for s2 in "${seeds2[@]}"; do
-        radius_scaling=$(bc <<< "$true_L / $L")
+        radius_scaling=$(bc <<< "$true_L / $L") 
 
         outdir="/scratch/groups/earlew/arlenlex/P1-model-dev/packing/size-effect/ensemble/L${L}/atomfiles_s${s2}"
         mkdir -p "$outdir"

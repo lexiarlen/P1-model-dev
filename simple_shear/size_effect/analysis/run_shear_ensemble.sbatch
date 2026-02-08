@@ -15,20 +15,21 @@ module load lammps_lexi chemistry
 EXEC="lmp"
 
 # 1) Run LAMMPS for each domain size (serially)
-Ls=(550) #(50 100 200 300 400 500 600) 
-num_atoms=(105785) #(000873 003496 013987 031473 055952 087426 105785)
+Ls=(600) #(50 100 200 300 400 500 600) 
+num_atoms=(125900) #(000873 003496 013987 031473 055952 087426 105785)
 ncores=(9) #(1 2 2 4 4 9 9)  
 seeds1=(9834 0825 2893 2283 1923)
+seeds2=(8302 3094 3894 1092 4999)
 
 for idx in "${!Ls[@]}"; do
     L=${Ls[$idx]}
     N=${num_atoms[$idx]}
     NP=${ncores[$idx]}
-    for s in "${seeds1[@]}"; do
+    for s in "${seeds2[@]}"; do
         mpirun -oversubscribe -n $NP $EXEC \
             -var L_pack "$L" \
             -var natoms  "$N" \
-            -var atomfile_dir "/oak/stanford/groups/earlew/arlenlex/P1-EKI-nares/packing/size-effect/ensemble/L${L}/atomfiles_s${s}/" \
+            -var atomfile_dir "/oak/stanford/groups/earlew/arlenlex/P1-model-dev/packing/size-effect/ensemble/L${L}/atomfiles_s${s}/" \
             -var out_dir "/scratch/groups/earlew/arlenlex/P1-model-dev/size_effect/data/big_natoms2/L${L}/" \
             -var outfile_name "N${N}Dump_seed${s}.lammps" \
             -in  /home/groups/earlew/arlenlex/P1-model-dev/size_effect/lammps_scripts/in.shear \
