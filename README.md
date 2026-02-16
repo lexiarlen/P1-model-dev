@@ -1,6 +1,6 @@
 # (1) Building and Compiling LAMMPS
 
-Clone and install my fork of LAMMPS. This fork makes a simple change of preventing failure in compression and modifying the smoothing for the bond force in the ___.cpp file of the BPM package in LAMMPS. 
+My build of LAMMPS modifies the bpm/spring package to prevent failure in compression by modifying the bond_bpm_spring.cpp file of the BPM package in LAMMPS. You can build LAMMPS from my github [repository] (https://github.com/lexiarlen/lammps.git). Alternatively, you can build the [latest version](https://github.com/lammps/lammps.git) of LAMMPS, replace the bond_bpm_spring.cpp file with the file from my repository and recompile. This second option may be desirable as my repository is less likely to be up to date with the most recent version of LAMMPS. 
 
 Go here [here](https://docs.lammps.org/Install_git.html) for directions on how to clone LAMMPS from git and build it on your machine. To build the version of LAMMPS with 
 

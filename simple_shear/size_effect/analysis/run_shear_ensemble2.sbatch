@@ -2,10 +2,10 @@
 #SBATCH --job-name=size_effect_tests
 #SBATCH --output=/home/groups/earlew/arlenlex/P1-model-dev/simple_shear/size_effect/out_files/%x_%A.out
 #SBATCH --error=/home/groups/earlew/arlenlex/P1-model-dev/simple_shear/size_effect/out_files/%x_%A.err
-#SBATCH --time=0:20:00
+#SBATCH --time=4:00:00
 #SBATCH -p serc
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=8
 
 
 module purge

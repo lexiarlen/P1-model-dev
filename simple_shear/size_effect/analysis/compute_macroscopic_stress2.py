@@ -44,13 +44,13 @@ def main():
         full_path = os.path.join(datadir, directory)
         if os.path.isdir(full_path) and directory.startswith("L"):
             for fname in sorted(glob.glob(os.path.join(os.path.join(datadir, directory), 'N*.lammps'))):
-                print(f'individual file name is {fname}')
+                print(f'individual file name is {fname}', flush = True)
                 macro = get_stress(fname, volume, phi)
                 base = os.path.splitext(os.path.basename(fname))[0][:-7]
                 outpath = os.path.join(directory, f'{base}_shear.npy')
                 np.save(outpath, macro)
         else:
-            print(f'path {full_path} does not exist.')
+            print(f'path {full_path} does not exist.', flush = True)
 
 if __name__ == "__main__":
     main()

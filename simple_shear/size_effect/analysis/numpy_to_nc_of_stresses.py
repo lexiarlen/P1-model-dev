@@ -40,7 +40,7 @@ def main():
 
     _, datadir = sys.argv
 
-    outputdir = os.path.join(datadir, 'figures')
+    outputdir = os.path.join(datadir, 'output_files')
     os.makedirs(outputdir, exist_ok=True)
 
     # ----- hard coding file parsing and strain calculation -----
@@ -81,19 +81,17 @@ if __name__ == "__main__":
     main()
 
 
-
-
 # ---------- paths ----------
 base_dir = "data/size_effect"          # folder containing 'processed' subdir
 processed_dir = os.path.join(base_dir, "processed")
 
 # ---------- simulation constants (for strain axis) ----------
 shear_rate = 1e-7      # [1/s]
-run_time  = 3600.0     # [s]
+run_time  = 1800 #3600.0     # [s]
 
 # ---------- system sizes / mapping ----------
-Ls = np.array([50., 100., 200., 300., 400., 500.])          # same L_s as in processing script
-natoms_list = np.array([873, 3496, 13987, 31473, 55952, 87426])
+Ls = np.array([100., 200., 300., 400., 500., 600])          # same L_s as in processing script
+natoms_list = np.array([3496, 13987, 31475, 55954, 87431, 125900])
 
 granularity = 1.0 / Ls   # 1/L_s
 order = np.argsort(granularity)   # increasing 1/L_s (low g -> high g)
@@ -260,7 +258,7 @@ ax1.set_axisbelow(True)
 ax2.set_ylabel(r"$\tau_{\text{max}}$ [kPa]", size='x-large')
 
 plt.savefig(
-    '/Users/arlenlex/Library/CloudStorage/OneDrive-Stanford/Stanford_Research/2025 Autumn/first_draft_paper_figs/size_effect.png',
+    'size_effect.png',
     dpi=300, bbox_inches='tight'
 )
 
