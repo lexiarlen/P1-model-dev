@@ -22,6 +22,6 @@ mpirun -oversubscribe -n 2 lmp \
         -var num_dumps "1000" \
         -var dt "0.025" \
         -var knb "1e9" \
-        -var eps_crit "0.00005" \ 
+        -var eps_crit "0.00005" \
         -in  /home/groups/earlew/arlenlex/P1-model-dev/simple_shear/in.shear \
         -log none

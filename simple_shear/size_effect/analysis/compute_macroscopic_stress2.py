@@ -29,7 +29,7 @@ def main():
 
     _, datadir = sys.argv
 
-    outputdir = os.path.join(datadir, 'figures')
+    outputdir = os.path.join(datadir, 'output_files')
     os.makedirs(outputdir, exist_ok=True)
 
     # ----- hard coding shear calculation -----
@@ -49,6 +49,8 @@ def main():
                 base = os.path.splitext(os.path.basename(fname))[0][:-7]
                 outpath = os.path.join(directory, f'{base}_shear.npy')
                 np.save(outpath, macro)
+        else:
+            print(f'path {full_path} does not exist.')
 
 if __name__ == "__main__":
     main()

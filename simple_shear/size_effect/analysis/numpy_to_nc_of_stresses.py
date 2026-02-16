@@ -48,6 +48,7 @@ def main():
     gs = 1/Ls.astype(float)
     seeds = np.array([8302, 3094, 3894, 1092, 4999])
     natoms_list = np.array(['3496', '13987', '31473', '55952', '87426', '125893'])
+    run_time = 1800
     time = np.linspace(0, run_time, len(macro))
     L = L_ini * (1+shear_rate*time)
     strain = (L-L_ini)/L_ini
