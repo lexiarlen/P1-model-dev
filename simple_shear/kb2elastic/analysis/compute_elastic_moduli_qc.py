@@ -7,6 +7,10 @@ Outputs under --base-dir:
   kb.npy, eps.npy, G_mean.npy, E_mean.npy
   metadata.txt (lightweight run info)
 
+QC:
+  Saves a stress-vs-strain plot for EACH dump (ensemble member) with best-fit line tau = G*gamma:
+    --base-dir/kb_<kb>_eps_<eps>/qc_plots/stress_strain_<dump>.png
+
 Assumes directory structure:
   --base-dir/kb_<kb>_eps_<eps>/N*.lammps
 """
@@ -15,6 +19,11 @@ import os, sys, glob, re
 import numpy as np
 import argparse
 from ovito.io import import_file
+
+# QC plotting
+import matplotlib
+matplotlib.use("Agg")  # safe on HPC
+import matplotlib.pyplot as plt
 
 
 # ---------- helpers ----------
@@ -26,7 +35,7 @@ def moving_average(x, w):
     return np.convolve(x, k, mode="same")
 
 
-def first_sustained_decrease(y, tol_frac=0.005, min_grow_len=10, lookahead=3):
+def first_sustained_decrease(y, tol_frac=0.005, min_grow_len=10, lookahead=1):
     y = np.asarray(y, float)
     if len(y) < min_grow_len + lookahead + 2:
         return len(y) - 1
@@ -63,6 +72,8 @@ def parse_kb_eps(path):
         return None, None
     return float(m.group(1)), float(m.group(2))
 
+
+
 def tau_xy_from_dump(dump_file, area, phi):
     pipeline = import_file(dump_file)
     totals = []
@@ -74,13 +85,64 @@ def tau_xy_from_dump(dump_file, area, phi):
         totals.append(np.sum(sxy))
 
     totals = np.asarray(totals, float)
-
     return phi * totals / area
+
+
+def save_qc_plot(out_png, gamma, tau, idx, G, title=None):
+    """
+    Save a QC plot:
+      - full curve tau(gamma)
+      - highlighted fit segment (0..idx)
+      - fit line tau = G*gamma on fit segment
+    """
+    gamma = np.asarray(gamma, float)
+    tau = np.asarray(tau, float)
+
+    # convert for display only
+    tau_kpa = tau / 1e3
+
+    # fit window
+    g_fit = gamma[: idx + 1]
+    tau_fit = tau[: idx + 1]
+    tau_fitline_kpa = (G * g_fit) / 1e3
+
+    fig = plt.figure(figsize=(6, 4))
+
+    # full curve (thin)
+    plt.plot(gamma, tau_kpa, linewidth=1.0)
+
+    # fit window (thicker)
+    plt.plot(g_fit, tau_fit / 1e3, linewidth=2.0)
+
+    # fit line
+    plt.plot(g_fit, tau_fitline_kpa, linestyle="--", linewidth=2.0)
+
+    plt.xlabel("shear strain, $\\gamma$ [-]")
+    plt.ylabel("shear stress, $\\tau$ [kPa]")
+
+    if title:
+        plt.title(title, fontsize=10)
+
+    # annotate G in plot (Pa) and also kPa per strain
+    plt.text(
+        0.02, 0.98,
+        f"G = {G:.3g} Pa\n(G/1e3 = {G/1e3:.3g} kPa)",
+        transform=plt.gca().transAxes,
+        va="top",
+        fontsize=9,
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8),
+    )
+
+    plt.grid(linestyle="--", linewidth=0.5, color="0.7", alpha=0.7)
+
+    os.makedirs(os.path.dirname(out_png), exist_ok=True)
+    plt.savefig(out_png, dpi=200, bbox_inches="tight")
+    plt.close(fig)
 
 
 # ---------- main ----------
 def main():
-    ap = argparse.ArgumentParser(description="Compute G, E and save minimal .npy arrays")
+    ap = argparse.ArgumentParser(description="Compute G, E and save minimal .npy arrays + QC plots")
     ap.add_argument("--base-dir", required=True, help="Folder containing kb_*_eps_* subfolders")
     ap.add_argument("--nu", type=float, default=0.3)
     ap.add_argument("--phi", type=float, default=0.71)
@@ -88,10 +150,11 @@ def main():
     ap.add_argument("--L0", type=float, default=100e3)
     ap.add_argument("--run-time", type=float, default=3600.0)
     ap.add_argument("--num-dumps", type=int, default=500)
-    ap.add_argument("--smooth-window", type=int, default=7)
+    ap.add_argument("--smooth-window", type=int, default=2)
     ap.add_argument("--tol-frac", type=float, default=0.005)
     ap.add_argument("--min-grow-len", type=int, default=10)
     ap.add_argument("--lookahead", type=int, default=3)
+    ap.add_argument("--qc-plots", action="store_true", help="Save per-dump stress-strain QC plots")
     args = ap.parse_args()
 
     base = os.path.abspath(args.base_dir)
@@ -121,6 +184,8 @@ def main():
 
         G_list = []
         E_list = []
+
+        qc_dir = os.path.join(cdir, "qc_plots")
 
         for dump in dumps:
             try:
@@ -155,6 +220,15 @@ def main():
             G_list.append(G)
             E_list.append(E)
 
+            if args.qc_plots:
+                dump_base = os.path.splitext(os.path.basename(dump))[0]
+                out_png = os.path.join(qc_dir, f"stress_strain_{dump_base}.png")
+                title = f"kb={kb:.3g}, eps={eps:.3g} | {dump_base}"
+                try:
+                    save_qc_plot(out_png, g, tau, idx, G, title=title)
+                except Exception as e:
+                    print(f"[WARN] QC plot failed for {dump}: {e}")
+
         if not G_list:
             continue
 
@@ -164,6 +238,9 @@ def main():
             G_mean=float(np.nanmean(G_list)),
             E_mean=float(np.nanmean(E_list)),
         ))
+
+        if args.qc_plots:
+            print(f"[OK] QC plots written under {qc_dir}")
 
     if not rows:
         print("[WARN] No results to save.")
@@ -182,7 +259,7 @@ def main():
     # lightweight metadata for reproducibility
     meta_path = os.path.join(base, "metadata.txt")
     with open(meta_path, "w") as f:
-        f.write("compute_elastic_moduli (minimal)\n")
+        f.write("compute_elastic_moduli (minimal + qc)\n")
         f.write(f"base_dir: {base}\n")
         f.write(f"nu: {args.nu}\n")
         f.write(f"phi: {args.phi}\n")
@@ -194,6 +271,7 @@ def main():
         f.write(f"tol_frac: {args.tol_frac}\n")
         f.write(f"min_grow_len: {args.min_grow_len}\n")
         f.write(f"lookahead: {args.lookahead}\n")
+        f.write(f"qc_plots: {bool(args.qc_plots)}\n")
         f.write(f"n_cases_saved: {len(rows)}\n")
 
     print(f"[OK] wrote kb.npy, eps.npy, G_mean.npy, E_mean.npy under {base}")
