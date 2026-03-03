@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # obtain domain averaged shear stress from lammps dump files
 
 from ovito.io import import_file

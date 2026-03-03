@@ -1,16 +1,5 @@
 #!/usr/bin/env python3
-"""
-Convert minimal .npy outputs into a single parquet DataFrame.
-
-Expected files under --base-dir:
-  kb.npy
-  eps.npy
-  G_mean.npy
-  E_mean.npy
-
-Outputs:
-  GE_results.parquet
-"""
+# saves .npy files from compute_elastic_moduli.py to one dataset
 
 import os
 import argparse

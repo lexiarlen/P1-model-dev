@@ -1,23 +1,13 @@
 #!/usr/bin/env python3
-"""
-Compute shear (G) and elastic (E) moduli from LAMMPS shear runs,
-saving ONLY the necessary arrays for downstream pandas/parquet:
-
-Outputs under --base-dir:
-  kb.npy, eps.npy, G_mean.npy, E_mean.npy
-  metadata.txt (lightweight run info)
-
-Assumes directory structure:
-  --base-dir/kb_<kb>_eps_<eps>/N*.lammps
-"""
+# extracts per atom stress from lammps dump and computes elastic properties by 
+# taking the slope through the origin of the shear stress v shear strain plot 
+# up to a few dumps before the ice initially fails
 
 import os, sys, glob, re
 import numpy as np
 import argparse
 from ovito.io import import_file
 
-
-# ---------- helpers ----------
 def moving_average(x, w):
     x = np.asarray(x, float)
     if w <= 1:
@@ -26,24 +16,26 @@ def moving_average(x, w):
     return np.convolve(x, k, mode="same")
 
 
-def first_sustained_decrease(y, tol_frac=0.005, min_grow_len=10, lookahead=3):
+def first_sustained_decrease(y, tol_frac=0.005, min_grow_len=10, lookahead=1, buffer = 10):
     y = np.asarray(y, float)
     if len(y) < min_grow_len + lookahead + 2:
-        return len(y) - 1
+        return len(y) - 1 - buffer
 
     finite = np.isfinite(y)
     if not np.any(finite):
-        return len(y) - 1
+        return len(y) - 1 - buffer 
 
     ymax = np.nanmax(np.abs(y[finite]))
     tol = tol_frac * (ymax if ymax > 0 else 1.0)
 
     for i in range(min_grow_len, len(y) - lookahead - 1):
         if np.all(y[i + 1 : i + 1 + lookahead] < y[i] - tol):
-            return i
+            if i - buffer >= 0:
+                return i - buffer
+            else: 
+                return i
 
-    return len(y) - 1
-
+    return len(y) - 1 - buffer
 
 def slope_through_origin(x, y):
     x = np.asarray(x, float)
@@ -78,7 +70,6 @@ def tau_xy_from_dump(dump_file, area, phi):
     return phi * totals / area
 
 
-# ---------- main ----------
 def main():
     ap = argparse.ArgumentParser(description="Compute G, E and save minimal .npy arrays")
     ap.add_argument("--base-dir", required=True, help="Folder containing kb_*_eps_* subfolders")
@@ -105,18 +96,18 @@ def main():
         if os.path.isdir(d)
     )
     if not case_dirs:
-        print(f"[WARN] No kb_*_eps_* dirs in {base}")
+        print(f"No kb_*_eps_* dirs in {base}")
         sys.exit(0)
 
     for cdir in case_dirs:
         kb, eps = parse_kb_eps(cdir)
         if kb is None:
-            print(f"[WARN] skip {cdir}")
+            print(f"Skipping {cdir}")
             continue
 
         dumps = sorted(glob.glob(os.path.join(cdir, "N*.lammps")))
         if not dumps:
-            print(f"[WARN] no dumps in {cdir}")
+            print(f"No dumps in {cdir}")
             continue
 
         G_list = []
@@ -126,7 +117,7 @@ def main():
             try:
                 tau = tau_xy_from_dump(dump, area, args.phi)
             except Exception as e:
-                print(f"[ERROR] {dump}: {e}")
+                print(f"Erron with {dump}: {e}")
                 continue
 
             n = min(len(tau), len(gamma))
@@ -166,7 +157,7 @@ def main():
         ))
 
     if not rows:
-        print("[WARN] No results to save.")
+        print("No results to save.")
         sys.exit(0)
 
     kb_arr = np.array([r["kb"] for r in rows], float)
@@ -178,27 +169,6 @@ def main():
     np.save(os.path.join(base, "eps.npy"), eps_arr)
     np.save(os.path.join(base, "G_mean.npy"), Gm_arr)
     np.save(os.path.join(base, "E_mean.npy"), Em_arr)
-
-    # lightweight metadata for reproducibility
-    meta_path = os.path.join(base, "metadata.txt")
-    with open(meta_path, "w") as f:
-        f.write("compute_elastic_moduli (minimal)\n")
-        f.write(f"base_dir: {base}\n")
-        f.write(f"nu: {args.nu}\n")
-        f.write(f"phi: {args.phi}\n")
-        f.write(f"shear_rate: {args.shear_rate}\n")
-        f.write(f"L0: {args.L0}\n")
-        f.write(f"run_time: {args.run_time}\n")
-        f.write(f"num_dumps: {args.num_dumps}\n")
-        f.write(f"smooth_window: {args.smooth_window}\n")
-        f.write(f"tol_frac: {args.tol_frac}\n")
-        f.write(f"min_grow_len: {args.min_grow_len}\n")
-        f.write(f"lookahead: {args.lookahead}\n")
-        f.write(f"n_cases_saved: {len(rows)}\n")
-
-    print(f"[OK] wrote kb.npy, eps.npy, G_mean.npy, E_mean.npy under {base}")
-    print(f"[OK] wrote {meta_path}")
-
 
 if __name__ == "__main__":
     main()
