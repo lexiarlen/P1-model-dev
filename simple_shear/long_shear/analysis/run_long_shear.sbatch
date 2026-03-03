@@ -2,7 +2,7 @@
 #SBATCH --job-name=longer_shear
 #SBATCH --output=/home/groups/earlew/arlenlex/P1-model-dev/simple_shear/long_shear/out_files/%x_%A.out
 #SBATCH --error=/home/groups/earlew/arlenlex/P1-model-dev/simple_shear/long_shear/out_files/%x_%A.err
-#SBATCH --time=00:10:00
+#SBATCH --time=20:00:00
 #SBATCH -p serc
 #SBATCH -c 2
 

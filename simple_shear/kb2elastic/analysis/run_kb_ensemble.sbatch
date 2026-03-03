@@ -55,20 +55,18 @@ for idx in "${!kbs[@]}"; do
         -log none
 done
 
-# --- postprocess part 1 (ovito env) ---
+# 1) create numpy files for each ensemble member
 ml purge
 source /home/groups/earlew/arlenlex/miniconda3-local/etc/profile.d/conda.sh
 conda activate ovito
 export PATH="$CONDA_PREFIX/bin:$PATH"
 
-python3 /home/groups/earlew/arlenlex/P1-model-dev/simple_shear/kb2elastic/analysis/compute_elastic_moduli_qc.py \
-    --base-dir "${base_out}" --qc-plots
+python3 /home/groups/earlew/arlenlex/P1-model-dev/simple_shear/kb2elastic/analysis/compute_elastic_moduli.py --base-dir "${base_out}" --qc-plots
 
-# --- postprocess part 2 (pandas env) ---
+# 2) convert numpy files to parquet
 ml purge
 source /home/groups/earlew/arlenlex/miniconda3-local/etc/profile.d/conda.sh
 conda activate postprocess_npy
 export PATH="$CONDA_PREFIX/bin:$PATH"
 
-python3 /home/groups/earlew/arlenlex/P1-model-dev/simple_shear/kb2elastic/analysis/numpy_to_pd.py \
-    --base-dir "${base_out}"
+python3 /home/groups/earlew/arlenlex/P1-model-dev/simple_shear/kb2elastic/analysis/numpy_to_pd.py --base-dir "${base_out}"
