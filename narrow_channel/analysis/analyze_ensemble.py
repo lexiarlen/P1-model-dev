@@ -20,26 +20,23 @@ def get_ts_from_data(fname, dt, y_cutoff=120e3):
       dcodt: |d(avg_co)/dt_frame|  (units per frame; consistent with your thresholds)
       avg_vy: mean vy in upper half (m/s)
       time: seconds
-    Notes:
-      - Always appends per-frame values to keep arrays aligned.
-      - Missing data is recorded as np.nan.
+
+    Convention:
+      - If no qualifying particles exist for a frame, store 0.0.
+      - No NaN handling here; NaN is reserved for output labels in compute_y().
     """
     pipeline = import_file(str(fname))
     nframes = pipeline.source.num_frames
 
     timesteps = np.empty(nframes, dtype=float)
-    avg_co = np.empty(nframes, dtype=float)
-    avg_vy = np.empty(nframes, dtype=float)
+    avg_co = np.zeros(nframes, dtype=float)
+    avg_vy = np.zeros(nframes, dtype=float)
 
     for frame in range(nframes):
         data = pipeline.compute(frame)
 
         ts = data.attributes.get("Timestep", frame)
         timesteps[frame] = float(ts)
-
-        # default to NaN each frame; fill if we can compute
-        avg_co[frame] = np.nan
-        avg_vy[frame] = np.nan
 
         # mean coordination number (active particles only)
         if ('c_nbond' in data.particles.keys()) and ('v_ingroup' in data.particles.keys()):
@@ -60,18 +57,7 @@ def get_ts_from_data(fname, dt, y_cutoff=120e3):
             if len(filtered) > 0:
                 avg_vy[frame] = float(np.mean(filtered))
 
-    # Build a NaN-safe avg_co for gradient.
-    # If all NaN (pathological), fallback to zeros -> dcodt zeros.
-    if np.all(np.isnan(avg_co)):
-        avg_co_filled = np.zeros_like(avg_co)
-    else:
-        # Fill NaNs using linear interpolation over frame index
-        x = np.arange(nframes)
-        ok = np.isfinite(avg_co)
-        avg_co_filled = avg_co.copy()
-        avg_co_filled[~ok] = np.interp(x[~ok], x[ok], avg_co[ok])
-
-    dcodt = np.abs(np.gradient(avg_co_filled))
+    dcodt = np.abs(np.gradient(avg_co, 36/500)) # fracture per hour - 36 hours, 500 dumps
     time = timesteps * dt
     return dcodt, avg_vy, time
 
@@ -79,17 +65,22 @@ def get_ts_from_data(fname, dt, y_cutoff=120e3):
 def compute_y(dcodt, vy, time, threshold=0.002, second_ratio=0.15, none_val=np.nan, epsilon=0.01):
     """
     Returns array([y1, y2]) in seconds, with np.nan representing "none".
-    """
-    # NaN-safe peak finding: treat NaNs as 0 so they don't create peaks.
-    dcodt_safe = np.nan_to_num(dcodt, nan=0.0, posinf=0.0, neginf=0.0)
 
-    peaks, _ = find_peaks(dcodt_safe)
-    heights = dcodt_safe[peaks]
+    Interpretation:
+      y1 = stable arch formation time
+      y2 = failure time
+
+    Assumes dcodt and vy are finite arrays (no NaN preprocessing needed).
+    """
+    peaks, _ = find_peaks(dcodt)
+    heights = dcodt[peaks]
+
+    mean_vy = np.mean(vy)
 
     # no peaks
     if len(peaks) == 0:
-        if np.abs(np.nanmean(vy)) > epsilon:
-            return np.array([0.0, none_val], dtype=float)  # fail immediately case (kept as you had it)
+        if np.abs(mean_vy) > epsilon:
+            return np.array([0.0, none_val], dtype=float)   # fail immediately
         return np.array([none_val, none_val], dtype=float)  # no fracturing
 
     # sort peaks by height (tallest first)
@@ -99,71 +90,60 @@ def compute_y(dcodt, vy, time, threshold=0.002, second_ratio=0.15, none_val=np.n
 
     # tallest peak check
     if heights_sorted[0] < threshold:
-        if np.abs(np.nanmean(vy)) > epsilon:
-            return np.array([0.0, none_val], dtype=float)  # fail immediately case
-        return np.array([none_val, none_val], dtype=float)
+        if np.abs(mean_vy) > epsilon:
+            return np.array([0.0, none_val], dtype=float)   # fail immediately
+        return np.array([none_val, none_val], dtype=float)  # no fracturing
 
-    peak_indices = [int(peaks_sorted[0])]
+    p1 = int(peaks_sorted[0])
 
-    # Search for a second peak among the next 4 highest
-    if len(peaks_sorted) > 1:
-        max_check = min(5, len(peaks_sorted))
-        p1 = int(peaks_sorted[0])
+    # search for second peak among next 4 highest
+    max_check = min(5, len(peaks_sorted))
+    for j in range(1, max_check):
+        p2 = int(peaks_sorted[j])
+        h2 = heights_sorted[j]
 
-        for j in range(1, max_check):
-            p2 = int(peaks_sorted[j])
-            h2 = heights_sorted[j]
+        # amplitude criterion
+        if h2 < second_ratio * heights_sorted[0]:
+            continue
 
-            # amplitude criterion
-            if h2 < second_ratio * heights_sorted[0]:
-                continue
+        # valley criterion between p1 and p2
+        lo, hi = sorted((p1, p2))
+        if hi - lo <= 1:
+            continue
 
-            # valley criterion between p1 and p2
-            lo, hi = (p1, p2) if p1 < p2 else (p2, p1)
-            if hi - lo <= 1:
-                continue
+        valley = np.min(dcodt[lo + 1:hi])
+        if valley >= threshold:
+            continue
 
-            valley = np.nanmin(dcodt_safe[lo + 1:hi])
-            has_valley = valley < threshold
-            if not has_valley:
-                continue
+        # velocity logic
+        pre = np.mean(vy[:p2]) if p2 > 0 else mean_vy
+        post = np.mean(vy[p2:]) if p2 < len(vy) else mean_vy
 
-            # velocity logic
-            pre = np.nanmean(vy[:p2]) if p2 > 0 else np.nanmean(vy)
-            post = np.nanmean(vy[p2:]) if p2 < len(vy) else np.nanmean(vy)
-
-            if (np.abs(pre) < epsilon) and (np.abs(post) > epsilon):
-                peak_indices.append(p2)
-                break
-
-    # Build y
-    if len(peak_indices) == 2:
-        y = time[np.sort(np.array(peak_indices, dtype=int))]
-        return y.astype(float)
+        if (np.abs(pre) < epsilon) and (np.abs(post) > epsilon):
+            y = time[np.sort(np.array([p1, p2], dtype=int))]
+            return y.astype(float)
 
     # single peak classification
     y = np.array([none_val, none_val], dtype=float)
-    idx = int(peak_indices[0])
+    idx = p1
 
     # stable arch
     if (idx > 1) and (idx < len(vy) - 2):
-        local_mean = np.nanmean(vy[idx - 2:idx + 2])
+        local_mean = np.mean(vy[idx - 2:idx + 2])
         if np.abs(local_mean) < epsilon:
             y[0] = float(time[idx])
-            y[1] = none_val
+            return y
 
     # no arch
-    if np.abs(np.nanmean(vy)) > epsilon:
-        y[0] = none_val
+    if np.abs(mean_vy) > epsilon:
         y[1] = float(time[idx])
+        return y
 
     # stable arch but fail quick
-    if (idx <= 1) and (np.abs(np.nanmean(vy[:2])) < epsilon):
+    if (idx <= 1) and (np.abs(np.mean(vy[:2])) < epsilon):
         y[0] = float(time[idx])
-        y[1] = none_val
 
     return y
-
 
 def get_u_vec(time_array, u_max, max_time):
     """NaN-propagating vectorized wind speed profile."""
@@ -182,7 +162,7 @@ def main():
     parser.add_argument("--J", type=int, required=True)
     parser.add_argument("--base_dir", type=str, required=True)
 
-    # optional knobs
+    # optional
     parser.add_argument("--threshold", type=float, default=0.002)
     parser.add_argument("--second_ratio", type=float, default=0.15)
     parser.add_argument("--epsilon", type=float, default=0.01)

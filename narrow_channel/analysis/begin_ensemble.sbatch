@@ -8,13 +8,20 @@
 
 set -euo pipefail
 
+OUTDIR="/scratch/groups/earlew/arlenlex/P1-model-dev/narrow_channel/out_files/lammps_jobs"
+
+if [[ -d "$OUTDIR" ]]; then
+    echo "Cleaning $OUTDIR"
+    rm -rf -- "${OUTDIR:?}/"*
+fi
+
 ml purge 
 source /home/groups/earlew/arlenlex/miniconda3-local/etc/profile.d/conda.sh
 conda activate ovito
 export PATH="$CONDA_PREFIX/bin:$PATH"
 
 J=200               # number of samples
-natoms=52457
+natoms=73442
 radius=400
 
 packing_dir="/scratch/groups/earlew/arlenlex/P1-model-dev/packing/narrow_channel/atomfiles_r400/" 
@@ -46,4 +53,7 @@ ANALYZE_JOBID=$(sbatch --parsable \
     --export=ALL,J="${J}",ARRAY_JOBID="${ARRAY_JOBID}",base_dir="${base_dir}" \
     /home/groups/earlew/arlenlex/P1-model-dev/narrow_channel/analysis/analyze_ensemble.sbatch)
 
-
+# #submit the analysis job for this u
+# ANALYZE_JOBID=$(sbatch --parsable \
+#     --export=ALL,J="${J}",base_dir="${base_dir}" \
+#     /home/groups/earlew/arlenlex/P1-model-dev/narrow_channel/analysis/analyze_ensemble.sbatch)

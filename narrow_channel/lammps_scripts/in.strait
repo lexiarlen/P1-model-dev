@@ -11,7 +11,7 @@ variable r_L                equal 400                           # [m] large part
 variable r_S                equal ${r_L}*3/5                    # [m] small particle radius
 variable rho_i              equal 920                           # [kg/m^3] ice density
 variable rmax_multiplier    equal 1.5                           # [-] bond installation multiplier
-variable natoms             equal 52457                         # nunber of atoms
+variable natoms             equal 73442                         # nunber of atoms
 
 # derived
 variable r_LS               equal (${r_L}+${r_S})/2             # [m] combined large and small particle radii
@@ -99,12 +99,9 @@ create_box          2 domain bond/types 1 extra/bond/per/atom 16 extra/special/p
 # create particles
 create_atoms        1 random ${natoms} 129741 domain units box              # just need to create same number as total number of atoms
 
-variable xpos_unscaled       atomfile ${atomfile_dir}x.data
-variable ypos_unscaled       atomfile ${atomfile_dir}y.data
-variable atomtype            atomfile ${atomfile_dir}type.data
-
-variable xpos               atom v_xpos_unscaled 
-variable ypos               atom v_ypos_unscaled 
+variable xpos       atomfile ${atomfile_dir}x.data
+variable ypos       atomfile ${atomfile_dir}y.data
+variable atomtype   atomfile ${atomfile_dir}type.data
 
 set             group all x v_xpos y v_ypos z 0 type v_atomtype
 
@@ -131,6 +128,7 @@ variable        ingroup atom gmask(active)
 # create groups
 group               large type 1
 group               small type 2
+variable            r atom gmask(large)*(${r_L}-${r_S})+${r_S}
 
 # setup contacts
 neighbor        ${neigh_bin_ini} bin

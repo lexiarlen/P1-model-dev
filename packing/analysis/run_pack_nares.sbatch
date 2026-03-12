@@ -14,7 +14,7 @@ module load lammps_lexi chemistry
 EXEC="lmp"
 
 mpirun -oversubscribe -np 1 \
-      $EXEC -var H "600" -var W "250" \
+      $EXEC -var H "600" -var W "350" \
       -var outdir "/scratch/groups/earlew/arlenlex/P1-model-dev/packing/narrow_channel/" \
       -var outfile_name "datafile_r400.lammps" \
       -in /home/groups/earlew/arlenlex/P1-model-dev/packing/lammps_scripts/in.pack -log none

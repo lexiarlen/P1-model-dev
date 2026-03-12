@@ -2,11 +2,11 @@
 #SBATCH --job-name=run_lammps
 #SBATCH --output=/scratch/groups/earlew/arlenlex/P1-model-dev/narrow_channel/out_files/lammps_jobs/%x_%A_%a.out
 #SBATCH --error=/scratch/groups/earlew/arlenlex/P1-model-dev/narrow_channel/out_files/lammps_jobs/%x_%A_%a.err
-#SBATCH --time=5:00:00            
+#SBATCH --time=24:00:00            
 #SBATCH -p serc
 #SBATCH --array=1-1%50              # launcher will override with --array=1-${J}%${J}
 #SBATCH --nodes=1
-#SBATCH --ntasks=4                 # 4 MPI ranks per ensemble member
+#SBATCH --ntasks=3                 # 3 MPI ranks per ensemble member
 #SBATCH --cpus-per-task=1          # 1 CPU per MPI rank
 
 set -euo pipefail
@@ -37,12 +37,12 @@ read -r kb eps < <(awk 'NF && $1 !~ /^#/' "${PARAMS}" | sed -n "${MEMBER}p")
 
 echo "RUNNING member=${MEMBER} ranks=${SLURM_NTASKS} kb=${kb} eps=${eps}"
 
-# ---------- run LAMMPS on 4 MPI ranks ----------
+# ---------- run LAMMPS on 3 MPI ranks ----------
 mpirun -oversubscribe -np "${SLURM_NTASKS}" lmp \
     -in /home/groups/earlew/arlenlex/P1-model-dev/narrow_channel/lammps_scripts/in.strait \
     -var knb "${kb}" \
     -var eps_crit "${eps}" \
     -var member "${MEMBER}" \
-    -var parent_dir_name "${output_dir}" \
+    -var outdir "${output_dir}" \
     -var atomfile_dir "${packing_dir}" \
     -log none
