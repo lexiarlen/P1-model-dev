@@ -48,9 +48,9 @@ def get_ts_from_data(fname, dt, y_cutoff=120e3):
                 avg_co[frame] = float(np.mean(filtered))
 
         # velocity in upper half (active particles only)
-        if ('Velocity.Y' in data.particles.keys()) and ('v_ingroup' in data.particles.keys()) and ('Position.Y' in data.particles.keys()):
-            vy = data.particles['Velocity.Y']
-            ypos = data.particles['Position.Y']
+        if ('Velocity' in data.particles.keys()) and ('v_ingroup' in data.particles.keys()) and ('Position' in data.particles.keys()):
+            vy = np.asarray(data.particles['Velocity'])[:, 1]
+            ypos = np.asarray(data.particles['Position'])[:, 1]
             ingroup = data.particles['v_ingroup']
             mask = (ingroup == 1) & (ypos >= y_cutoff)
             filtered = vy[mask]
@@ -62,7 +62,7 @@ def get_ts_from_data(fname, dt, y_cutoff=120e3):
     return dcodt, avg_vy, time
 
 
-def compute_y(dcodt, vy, time, threshold=0.002, second_ratio=0.15, none_val=np.nan, epsilon=0.01):
+def compute_y(dcodt, vy, time, threshold=0.05, second_ratio=0.1, none_val=np.nan, epsilon=0.01):
     """
     Returns array([y1, y2]) in seconds, with np.nan representing "none".
 
@@ -127,17 +127,17 @@ def compute_y(dcodt, vy, time, threshold=0.002, second_ratio=0.15, none_val=np.n
     y = np.array([none_val, none_val], dtype=float)
     idx = p1
 
+    # no arch
+    if np.abs(mean_vy) > epsilon:
+        y[1] = float(time[idx])
+        return y
+
     # stable arch
     if (idx > 1) and (idx < len(vy) - 2):
         local_mean = np.mean(vy[idx - 2:idx + 2])
         if np.abs(local_mean) < epsilon:
             y[0] = float(time[idx])
             return y
-
-    # no arch
-    if np.abs(mean_vy) > epsilon:
-        y[1] = float(time[idx])
-        return y
 
     # stable arch but fail quick
     if (idx <= 1) and (np.abs(np.mean(vy[:2])) < epsilon):
@@ -163,8 +163,8 @@ def main():
     parser.add_argument("--base_dir", type=str, required=True)
 
     # optional
-    parser.add_argument("--threshold", type=float, default=0.002)
-    parser.add_argument("--second_ratio", type=float, default=0.15)
+    parser.add_argument("--threshold", type=float, default=0.05)
+    parser.add_argument("--second_ratio", type=float, default=0.1)
     parser.add_argument("--epsilon", type=float, default=0.01)
     parser.add_argument("--y_cutoff", type=float, default=120e3)
 
@@ -177,7 +177,7 @@ def main():
     u_max = 20
     rho_a = 1.3
     C_a = 0.0012
-    T_max = 26
+    T_max = 36
     max_time = T_max * 3600.0  # [s]
 
     radius = 400
@@ -242,8 +242,8 @@ def main():
         line1, = ax.plot(time / 3600.0, dcodt, lw=4, color='gray', label='damage rate')
         ax.set_xlabel("time (hrs)", size='large')
         ax.tick_params(labelsize='large')
-        ax.set_ylabel(r"$\frac{d\text{Co#}}{dt}$", size='xx-large', color='gray')
-        ax.set_ylim(-0.01, 0.35)
+        ax.set_ylabel(r"$|\frac{d\text{Co#}}{dt}|$", size='xx-large', color='gray')
+        ax.set_ylim(-0.01, 1.8)
         ax.grid(True)
 
         ax2 = ax.twinx()

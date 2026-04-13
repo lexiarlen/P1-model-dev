@@ -13,6 +13,7 @@ set -euo pipefail
 
 : "${J:?J is required}"
 : "${base_dir:?base_dir is required}"
+: "${state_dir:?state_dir is required}"
 
 # 1) analyze individual runs
 ml purge
@@ -25,8 +26,8 @@ python -u /home/groups/earlew/arlenlex/P1-model-dev/narrow_channel/analysis/anal
 # 2) npy to parquet
 ml purge
 source /home/groups/earlew/arlenlex/miniconda3-local/etc/profile.d/conda.sh
-conda activate nextsim
+conda activate postprocess_npy
 export PATH="$CONDA_PREFIX/bin:$PATH"
 
-python /home/groups/earlew/arlenlex/P1-model-dev/narrow_channel/analysis/np_to_pd.py --J "${J}" --base_dir "${base_dir}"
+python /home/groups/earlew/arlenlex/P1-model-dev/narrow_channel/analysis/np_to_pd.py  --state_dir "${state_dir}"
 

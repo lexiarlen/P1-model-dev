@@ -2,11 +2,11 @@
 #SBATCH --job-name=run_lammps
 #SBATCH --output=/scratch/groups/earlew/arlenlex/P1-model-dev/narrow_channel/out_files/lammps_jobs/%x_%A_%a.out
 #SBATCH --error=/scratch/groups/earlew/arlenlex/P1-model-dev/narrow_channel/out_files/lammps_jobs/%x_%A_%a.err
-#SBATCH --time=24:00:00            
+#SBATCH --time=44:00:00            
 #SBATCH -p serc
 #SBATCH --array=1-1%50              # launcher will override with --array=1-${J}%${J}
 #SBATCH --nodes=1
-#SBATCH --ntasks=3                 # 3 MPI ranks per ensemble member
+#SBATCH --ntasks=3                 # 4 MPI ranks per ensemble member
 #SBATCH --cpus-per-task=1          # 1 CPU per MPI rank
 
 set -euo pipefail

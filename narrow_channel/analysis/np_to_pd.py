@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 from pathlib import Path
-
+import os
 import numpy as np
 import pandas as pd
 
@@ -18,14 +18,18 @@ def load_theta_y_sig(state_dir: Path):
     if not sig_path.exists():
         raise FileNotFoundError(f"Missing {sig_path}")
 
-    THETA = np.array(np.loadtxt(theta_path), dtype=float).T  # (n_params, J)
-    Y = np.load(y_path).astype(float)                        # (2, J)
-    SIG = np.load(sig_path).astype(float)                    # (2, J)
+    THETA = np.array(np.loadtxt(theta_path), dtype=float).T   # shape (n_params, J)
+    Y = np.load(y_path).astype(float)                         # shape (2, J)
+    SIG = np.load(sig_path).astype(float)                     # shape (2, J)
 
     if Y.shape[0] != 2:
         raise ValueError(f"Expected Y shape (2, J), got {Y.shape}")
     if SIG.shape != Y.shape:
         raise ValueError(f"Expected SIG shape {Y.shape}, got {SIG.shape}")
+    if THETA.shape[1] != Y.shape[1]:
+        raise ValueError(
+            f"Mismatch: THETA has {THETA.shape[1]} samples but Y has {Y.shape[1]}"
+        )
 
     return THETA, Y, SIG
 
@@ -51,16 +55,18 @@ def classify_labels(y1, y2):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--state_dir", type=str, required=True, help="Directory containing theta.tsv, Y.npy, SIG.npy")
-    ap.add_argument("--out", type=str, required=True, help="Output parquet path")
+    ap.add_argument(
+        "--state_dir",
+        type=str,
+        required=True,
+        help="Directory containing theta.tsv, Y.npy, SIG.npy"
+    )
     ap.add_argument("--kb_idx", type=int, default=0)
     ap.add_argument("--eps_idx", type=int, default=1)
-    ap.add_argument("--extras", action="store_true", help="Also store y1_h, y2_h, dt_h")
     args = ap.parse_args()
 
     state_dir = Path(args.state_dir)
-    out_path = Path(args.out)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path = state_dir / "regimes.parquet"
 
     THETA, Y, SIG = load_theta_y_sig(state_dir)
 
@@ -70,25 +76,44 @@ def main():
     y1_s = Y[0, :].astype(float).ravel()
     y2_s = Y[1, :].astype(float).ravel()
 
-    # Keep only valid parameters (matches your plotting guard)
+    sig1 = SIG[0, :].astype(float).ravel()
+    sig2 = SIG[1, :].astype(float).ravel()
+
+    member_id = np.arange(1, len(kb) + 1, dtype=int)
+
+    # Keep only valid parameters for plotting / analysis
     valid = np.isfinite(kb) & np.isfinite(eps) & (kb > 0) & (eps > 0)
+
     kb = kb[valid]
     eps = eps[valid]
     y1_s = y1_s[valid]
     y2_s = y2_s[valid]
+    sig1 = sig1[valid]
+    sig2 = sig2[valid]
+    member_id = member_id[valid]
+
+    y1_h = y1_s / 3600.0
+    y2_h = y2_s / 3600.0
+    dt_h = np.abs(y2_h - y1_h)
 
     label = classify_labels(y1_s, y2_s)
 
-    df = pd.DataFrame({"kb": kb, "eps": eps, "label": label})
+    # only meaningful when both peaks exist
+    dt_h[label != 3] = np.nan
 
-    if args.extras:
-        y1_h = y1_s / 3600.0
-        y2_h = y2_s / 3600.0
-        dt_h = np.abs(y2_h - y1_h)
-        dt_h[label != 3] = np.nan
-        df["y1_h"] = y1_h
-        df["y2_h"] = y2_h
-        df["dt_h"] = dt_h
+    df = pd.DataFrame({
+        "member_id": member_id,
+        "kb": kb,
+        "eps": eps,
+        "label": label,
+        "y1_s": y1_s,
+        "y2_s": y2_s,
+        "y1_h": y1_h,
+        "y2_h": y2_h,
+        "dt_h": dt_h,
+        "sig1": sig1,
+        "sig2": sig2,
+    })
 
     df.to_parquet(out_path, index=False)
 

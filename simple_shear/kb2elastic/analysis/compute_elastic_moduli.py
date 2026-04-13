@@ -55,7 +55,7 @@ def parse_kb_eps(path):
         return None, None
     return float(m.group(1)), float(m.group(2))
 
-def tau_xy_from_dump(dump_file, area, phi):
+def tau_xy_from_dump(dump_file, area):
     pipeline = import_file(dump_file)
     totals = []
     nframes = pipeline.source.num_frames
@@ -67,14 +67,13 @@ def tau_xy_from_dump(dump_file, area, phi):
 
     totals = np.asarray(totals, float)
 
-    return phi * totals / area
+    return totals / area
 
 
 def main():
     ap = argparse.ArgumentParser(description="Compute G, E and save minimal .npy arrays")
     ap.add_argument("--base-dir", required=True, help="Folder containing kb_*_eps_* subfolders")
     ap.add_argument("--nu", type=float, default=0.3)
-    ap.add_argument("--phi", type=float, default=0.71)
     ap.add_argument("--shear-rate", type=float, default=1e-7)
     ap.add_argument("--L0", type=float, default=100e3)
     ap.add_argument("--run-time", type=float, default=3600.0)
@@ -115,7 +114,7 @@ def main():
 
         for dump in dumps:
             try:
-                tau = tau_xy_from_dump(dump, area, args.phi)
+                tau = tau_xy_from_dump(dump, area)
             except Exception as e:
                 print(f"Erron with {dump}: {e}")
                 continue
