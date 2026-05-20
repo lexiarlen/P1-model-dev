@@ -6,7 +6,7 @@ variable eps_crit          index 0.00001                        # [-] critical s
 variable member            index -999                           # ensemble member number
 
 # ice props
-variable knc                equal 1e5                           # [N/m] contact stiffness
+variable knc                index 1e5                           # [N/m] contact stiffness
 variable r_L                equal 400                           # [m] large particle radius
 variable r_S                equal ${r_L}*3/5                    # [m] small particle radius
 variable rho_i              equal 920                           # [kg/m^3] ice density
@@ -151,7 +151,7 @@ unfix integrate_all
 # set bond style
 neighbor        ${r_L} bin
 special_bonds   lj 0.0 1.0 1.0 coul 1.0 1.0 1.0
-bond_style      bpm/spring overlay/pair no smooth yes normalize no 
+bond_style      bpm/spring overlay/pair no smooth no normalize no 
 bond_coeff      1 ${knb} ${eps_crit} ${dampb}
 
 # global computes & fixes

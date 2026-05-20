@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=size_effect_tests
-#SBATCH --output=/home/groups/earlew/arlenlex/P1-model-dev/simple_shear/size_effect/out_files/%x_%A.out
-#SBATCH --error=/home/groups/earlew/arlenlex/P1-model-dev/simple_shear/size_effect/out_files/%x_%A.err
-#SBATCH --time=04:00:00
+#SBATCH --output=/home/groups/earlew/arlenlex/P1-model-dev/simple_shear/size_effect/out_files_smno/%x_%A.out
+#SBATCH --error=/home/groups/earlew/arlenlex/P1-model-dev/simple_shear/size_effect/out_files_smno/%x_%A.err
+#SBATCH --time=72:00:00
 #SBATCH -p serc
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=12
+#SBATCH --cpus-per-task=9
 
 module purge
 module use /home/groups/earlew/arlenlex/.local/modulefiles
@@ -32,7 +32,7 @@ for idx in "${!Ls[@]}"; do
             -var natoms  "$N" \
             -var dt "$DT" \
             -var atomfile_dir "/scratch/groups/earlew/arlenlex/P1-model-dev/packing/size-effect/ensemble10/L${L}/atomfiles_s${s}/" \
-            -var out_dir "/scratch/groups/earlew/arlenlex/P1-model-dev/simple_shear/size_effect/ensemble10/L${L}/" \
+            -var out_dir "/scratch/groups/earlew/arlenlex/P1-model-dev/simple_shear/size_effect/ensemble10_smno/L${L}/" \
             -var outfile_name "N${N}Dump_seed${s}.lammps" \
             -var run_time "$run_time" \
             -var num_dumps "$num_dumps" \
@@ -51,7 +51,7 @@ export PATH="$CONDA_PREFIX/bin:$PATH"
 
 # Create numpy arrays of stresses using Ovito (pandas incompatible with ovito on Sherlock)
 python3 /home/groups/earlew/arlenlex/P1-model-dev/simple_shear/size_effect/analysis/compute_macroscopic_stress.py \
-    "/scratch/groups/earlew/arlenlex/P1-model-dev/simple_shear/size_effect/ensemble10/" 
+    "/scratch/groups/earlew/arlenlex/P1-model-dev/simple_shear/size_effect/ensemble10_smno/" 
 
 # 3) Turn numpy arrays into parquet for visualization
 ml purge
@@ -60,4 +60,4 @@ conda activate postprocess_npy
 export PATH="$CONDA_PREFIX/bin:$PATH"
 
 python3 /home/groups/earlew/arlenlex/P1-model-dev/simple_shear/size_effect/analysis/numpy_to_nc_of_stresses.py \
-    "/scratch/groups/earlew/arlenlex/P1-model-dev/simple_shear/size_effect/ensemble10/" 
+    "/scratch/groups/earlew/arlenlex/P1-model-dev/simple_shear/size_effect/ensemble10_smno/" 

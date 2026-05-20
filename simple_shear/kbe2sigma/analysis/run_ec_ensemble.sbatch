@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=kb2elastic_ensemble
-#SBATCH --output=/home/groups/earlew/arlenlex/P1-model-dev/simple_shear/kbe2sigma/out_files/%x_%A.out
-#SBATCH --error=/home/groups/earlew/arlenlex/P1-model-dev/simple_shear/kbe2sigma/out_files/%x_%A.err
+#SBATCH --output=/home/groups/earlew/arlenlex/P1-model-dev/simple_shear/kbe2sigma_smno/out_files/%x_%A.out
+#SBATCH --error=/home/groups/earlew/arlenlex/P1-model-dev/simple_shear/kbe2sigma_smno/out_files/%x_%A.err
 #SBATCH --time=04:00:00
 #SBATCH -p serc
 #SBATCH --ntasks=2
@@ -21,7 +21,7 @@ s=8302
 kb=1e9
 dt=0.025
 eps=(5.00e-06 6.00e-05 1.15e-04 1.70e-04 2.25e-04 2.80e-04 3.35e-04 3.90e-04 4.45e-04 5.00e-04) 
-base_out="/scratch/groups/earlew/arlenlex/P1-model-dev/simple_shear/kbe2sigma/L${L}"
+base_out="/scratch/groups/earlew/arlenlex/P1-model-dev/simple_shear/kbe2sigma_smno/L${L}"
 atomfile_dir="/scratch/groups/earlew/arlenlex/P1-model-dev/packing/size-effect/ensemble10/L${L}/atomfiles_s${s}/"
 run_time="5400"
 num_dumps="500"

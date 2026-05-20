@@ -7,7 +7,7 @@ import sys
 import glob
 import os
 
-def get_stress(filename, volume, phi):
+def get_stress(filename, volume):
     pipeline = import_file(filename)
 
     total_sxy = []
@@ -19,7 +19,7 @@ def get_stress(filename, volume, phi):
             sxy = data.particles['c_peratom_stress[4]']
             total_sxy.append(np.sum(sxy))
 
-    macroscopic_shear_stress = phi*np.array(total_sxy)/volume
+    macroscopic_shear_stress = np.array(total_sxy)/volume
     return macroscopic_shear_stress
 
 def main():
@@ -35,7 +35,6 @@ def main():
 
     # ----- hard coding shear calculation -----
 
-    phi = 0.71
     L_ini = 100e3
     volume = L_ini**2
 
@@ -49,7 +48,7 @@ def main():
 
             for fname in sorted(glob.glob(os.path.join(full_path, 'N*.lammps'))):
                 print(f'working on file {fname}', flush = True)
-                macro = get_stress(fname, volume, phi)
+                macro = get_stress(fname, volume)
                 base = os.path.splitext(os.path.basename(fname))[0]
 
                 outpath = os.path.join(out_L_dir, f'{base}_shear.npy')

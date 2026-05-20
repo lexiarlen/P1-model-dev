@@ -110,7 +110,7 @@ unfix integrate_all
 # set bond style
 neighbor            ${r_L} bin
 special_bonds       lj/coul 0.0 1.0 1.0 coul 1.0 1.0 1.0 #
-bond_style          bpm/spring overlay/pair no smooth yes normalize no volume/factor no
+bond_style          bpm/spring overlay/pair no smooth no normalize no volume/factor no
 bond_coeff          1 ${knb} ${eps_crit} ${dampb} 
 
 # global computes & fixes

@@ -19,11 +19,11 @@ mpirun -oversubscribe -n 4 lmp \
         -var natoms  "$N" \
         -var atomfile_dir "/scratch/groups/earlew/arlenlex/P1-model-dev/packing/size-effect/ensemble10/L${L}/atomfiles_s${s}/" \
         -var out_dir "/scratch/groups/earlew/arlenlex/P1-model-dev/simple_shear/long_shear/" \
-        -var outfile_name "N${N}Dump_seed${s}_1000hours_1mpa.lammps" \
+        -var outfile_name "N${N}Dump_seed${s}_1000hours_smno.lammps" \
         -var run_time "3600000" \
         -var num_dumps "1000" \
         -var dt "0.025" \
         -var knb "1e9" \
-        -var eps_crit "0.0001" \
+        -var eps_crit "0.00005" \
         -in  /home/groups/earlew/arlenlex/P1-model-dev/simple_shear/in.shear \
         -log none

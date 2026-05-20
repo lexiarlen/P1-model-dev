@@ -73,7 +73,7 @@ def tau_xy_from_dump(dump_file, area):
 def main():
     ap = argparse.ArgumentParser(description="Compute G, E and save minimal .npy arrays")
     ap.add_argument("--base-dir", required=True, help="Folder containing kb_*_eps_* subfolders")
-    ap.add_argument("--nu", type=float, default=0.3)
+    ap.add_argument("--nu", type=float, default=0.3333)
     ap.add_argument("--shear-rate", type=float, default=1e-7)
     ap.add_argument("--L0", type=float, default=100e3)
     ap.add_argument("--run-time", type=float, default=3600.0)
