@@ -1,7 +1,7 @@
 *.err
 *.out
 *.lammps
-out_files/*
-out_files_smno/*
-
+out_files
+out_files_smno
+test_figures
 

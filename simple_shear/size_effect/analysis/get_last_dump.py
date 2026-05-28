@@ -26,7 +26,7 @@ If the header line contains 'v_r', it is replaced with 'r' for easier visualizat
 """
 
 from pathlib import os
-import Path
+from path import Path
 
 MARKER = b"ITEM: TIMESTEP"
 ATOMS_HEADER_PREFIX = b"ITEM: ATOMS "
