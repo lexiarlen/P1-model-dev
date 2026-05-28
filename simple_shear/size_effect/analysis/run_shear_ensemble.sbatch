@@ -1,14 +1,33 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=size_effect_tests
-#SBATCH --output=/home/groups/earlew/arlenlex/P1-model-dev/simple_shear/size_effect/out_files_smno/%x_%A.out
-#SBATCH --error=/home/groups/earlew/arlenlex/P1-model-dev/simple_shear/size_effect/out_files_smno/%x_%A.err
+#SBATCH --output=../out_files/%x_%A.out
+#SBATCH --error=../out_files/%x_%A.err
 #SBATCH --time=72:00:00
 #SBATCH -p serc
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=9
 
+# Resolve paths without hard-coding a user-specific checkout location.
+find_project_dir() {
+    local dir="$SCRIPT_DIR"
+    while [[ "$dir" != "/" ]]; do
+        if [[ -d "$dir/narrow_channel" && -d "$dir/packing" && -d "$dir/simple_shear" ]]; then
+            printf '%s\n' "$dir"
+            return 0
+        fi
+        dir="$(dirname "$dir")"
+    done
+    printf '%s\n' "$SCRIPT_DIR"
+}
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="${PROJECT_DIR:-$(find_project_dir)}"
+SCRATCH_PROJECT_DIR="${SCRATCH_PROJECT_DIR:-${PROJECT_DIR}}"
+MODULEFILES_DIR="${MODULEFILES_DIR:-/home/groups/earlew/arlenlex/.local/modulefiles}"
+CONDA_SH="${CONDA_SH:-/home/groups/earlew/arlenlex/miniconda3-local/etc/profile.d/conda.sh}"
+
+
 module purge
-module use /home/groups/earlew/arlenlex/.local/modulefiles
+module use ${MODULEFILES_DIR}
 module load lammps_lexi chemistry
 
 
@@ -31,33 +50,33 @@ for idx in "${!Ls[@]}"; do
             -var L_pack "$L" \
             -var natoms  "$N" \
             -var dt "$DT" \
-            -var atomfile_dir "/scratch/groups/earlew/arlenlex/P1-model-dev/packing/size-effect/ensemble10/L${L}/atomfiles_s${s}/" \
-            -var out_dir "/scratch/groups/earlew/arlenlex/P1-model-dev/simple_shear/size_effect/ensemble10_smno/L${L}/" \
+            -var atomfile_dir "${SCRATCH_PROJECT_DIR}/packing/size-effect/ensemble10/L${L}/atomfiles_s${s}/" \
+            -var out_dir "${SCRATCH_PROJECT_DIR}/simple_shear/size_effect/ensemble10_smno/L${L}/" \
             -var outfile_name "N${N}Dump_seed${s}.lammps" \
             -var run_time "$run_time" \
             -var num_dumps "$num_dumps" \
             -var knb "1e9" \
             -var eps_crit "0.00005" \
-            -in  /home/groups/earlew/arlenlex/P1-model-dev/simple_shear/in.shear \
+            -in  ${PROJECT_DIR}/simple_shear/in.shear \
             -log none
     done
 done
 
 # 2) Switch to ovito conda environment to postprocess
 ml purge
-source /home/groups/earlew/arlenlex/miniconda3-local/etc/profile.d/conda.sh
+source ${CONDA_SH}
 conda activate ovito
 export PATH="$CONDA_PREFIX/bin:$PATH"
 
 # Create numpy arrays of stresses using Ovito (pandas incompatible with ovito on Sherlock)
-python3 /home/groups/earlew/arlenlex/P1-model-dev/simple_shear/size_effect/analysis/compute_macroscopic_stress.py \
-    "/scratch/groups/earlew/arlenlex/P1-model-dev/simple_shear/size_effect/ensemble10_smno/" 
+python3 ${PROJECT_DIR}/simple_shear/size_effect/analysis/compute_macroscopic_stress.py \
+    "${SCRATCH_PROJECT_DIR}/simple_shear/size_effect/ensemble10_smno/" 
 
 # 3) Turn numpy arrays into parquet for visualization
 ml purge
-source /home/groups/earlew/arlenlex/miniconda3-local/etc/profile.d/conda.sh
+source ${CONDA_SH}
 conda activate postprocess_npy
 export PATH="$CONDA_PREFIX/bin:$PATH"
 
-python3 /home/groups/earlew/arlenlex/P1-model-dev/simple_shear/size_effect/analysis/numpy_to_nc_of_stresses.py \
-    "/scratch/groups/earlew/arlenlex/P1-model-dev/simple_shear/size_effect/ensemble10_smno/" 
+python3 ${PROJECT_DIR}/simple_shear/size_effect/analysis/numpy_to_nc_of_stresses.py \
+    "${SCRATCH_PROJECT_DIR}/simple_shear/size_effect/ensemble10_smno/" 
