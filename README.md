@@ -87,13 +87,17 @@ After the LAMMPS scripts have been run, the batch script launches a postprocessi
 # (3) Running Experiments
 The code is organized into the two experiments, simple shear and narrow channel. Within each folder, there a subfolders for each experiment. In each subfolder, there is an analysis folder which contains the code to produce the data to make the figures in the paper. A brief outline of these folders is provided here:
 
-Figure xx: simple_shear/kb2elastic
+Figures 3, A1: simple_shear/size_effect
 
-Figure xx: simple_shear/kbe2sigma
+Figure 4: simple_shear/kbe2sigma
 
-Figure xx: simple_shear/long_shear
+Figure 5: simple_shear/kb2elastic
 
-Figure xx: simple_shear/size_effect
+Figure 6: simple_shear/long_shear
+
+Figures 7,8,9: narrow_channel/parameter_sweep
+
+Figures C1, C2, C3, C4: narrow_channel/kc_checks
 
 
 # (4) Analyzing experiments
