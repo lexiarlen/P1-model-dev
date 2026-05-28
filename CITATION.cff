@@ -1,0 +1,9 @@
+cff-version: 1.1.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: Arlen
+  given-names: Lexi
+orcid: https://orcid.org/0000-0002-4500-6399
+title:lexiarlen/P1-model-dev: v1.0.1-submission: Sea Ice DEM analysis code
+version: v1.0.1-submission
+date-released: 2026-05-28
