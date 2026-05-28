@@ -1,13 +1,32 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=making_packings_for_size_effect_ensemble_runs
-#SBATCH --output=/home/groups/earlew/arlenlex/P1-model-dev/packing/out_files/%x_%A.out
-#SBATCH --error=/home/groups/earlew/arlenlex/P1-model-dev/packing/out_files/%x_%A.err
+#SBATCH --output=../out_files/%x_%A.out
+#SBATCH --error=../out_files/%x_%A.err
 #SBATCH --time=24:00:00
 #SBATCH -p serc
 #SBATCH -c 2
 
+# Resolve paths without hard-coding a user-specific checkout location.
+find_project_dir() {
+    local dir="$SCRIPT_DIR"
+    while [[ "$dir" != "/" ]]; do
+        if [[ -d "$dir/narrow_channel" && -d "$dir/packing" && -d "$dir/simple_shear" ]]; then
+            printf '%s\n' "$dir"
+            return 0
+        fi
+        dir="$(dirname "$dir")"
+    done
+    printf '%s\n' "$SCRIPT_DIR"
+}
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="${PROJECT_DIR:-/home/groups/earlew/arlenlex/P1-model-dev}"
+SCRATCH_PROJECT_DIR="${SCRATCH_PROJECT_DIR:-/scratch/groups/earlew/arlenlex/P1-model-dev}"
+MODULEFILES_DIR="${MODULEFILES_DIR:-/home/groups/earlew/arlenlex/.local/modulefiles}"
+CONDA_SH="${CONDA_SH:-/home/groups/earlew/arlenlex/miniconda3-local/etc/profile.d/conda.sh}"
+
+
 module purge
-module use /home/groups/earlew/arlenlex/.local/modulefiles
+module use ${MODULEFILES_DIR}
 module load lammps_lexi chemistry
 
 # 1) create 10 differently seeded packings for each domain size = 100e3/L
@@ -21,16 +40,16 @@ for L in "${Ls[@]}"; do
         mpirun -oversubscribe -np 2 \
         lmp -var H "${L}" -var W "${L}" \
         -var seed1 "${s1}" -var seed2 "${s2}" \
-        -var outdir "/scratch/groups/earlew/arlenlex/P1-model-dev/packing/size-effect/ensemble10/L${L}/" \
+        -var outdir "${SCRATCH_PROJECT_DIR}/packing/size-effect/ensemble10/L${L}/" \
         -var outfile_name "datafile_s${s2}.lammps" \
-        -in /home/groups/earlew/arlenlex/P1-model-dev/packing/lammps_scripts/in.pack \
+        -in ${PROJECT_DIR}/packing/lammps_scripts/in.pack \
         -log none
     done
 done
 
 # 2) generate atomfiles with the python script
 ml purge
-source /home/groups/earlew/arlenlex/miniconda3-local/etc/profile.d/conda.sh
+source ${CONDA_SH}
 conda activate nextsim
 export PATH="$CONDA_PREFIX/bin:$PATH"
 
@@ -39,11 +58,11 @@ for L in "${Ls[@]}"; do
     for s2 in "${seeds2[@]}"; do
         radius_scaling=$(bc -l <<< "$true_L / $L")
 
-        outdir="/scratch/groups/earlew/arlenlex/P1-model-dev/packing/size-effect/ensemble10/L${L}/atomfiles_s${s2}"
+        outdir="${SCRATCH_PROJECT_DIR}/packing/size-effect/ensemble10/L${L}/atomfiles_s${s2}"
         mkdir -p "$outdir"
 
         python3 create_atomfiles.py \
-        "/scratch/groups/earlew/arlenlex/P1-model-dev/packing/size-effect/ensemble10/L${L}/datafile_s${s2}.lammps" \
+        "${SCRATCH_PROJECT_DIR}/packing/size-effect/ensemble10/L${L}/datafile_s${s2}.lammps" \
         "$radius_scaling" \
         "$outdir"
     done

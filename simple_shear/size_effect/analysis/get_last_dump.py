@@ -25,7 +25,7 @@ Only the last dump block is written.
 If the header line contains 'v_r', it is replaced with 'r' for easier visualization with the OVITO GUI.
 """
 
-from pathlib import Path
+from pathlib import os, Path
 
 MARKER = b"ITEM: TIMESTEP"
 ATOMS_HEADER_PREFIX = b"ITEM: ATOMS "
@@ -143,4 +143,4 @@ def process_all(parent_dir="."):
                 print(f"    Error processing {file_path.name}: {e}")
 
 if __name__ == "__main__":
-    process_all("/scratch/groups/earlew/arlenlex/P1-model-dev/simple_shear/size_effect/ensemble10_smno/")
+    process_all(os.environ.get("DATA_DIR", "data/simple_shear/size_effect/ensemble10_smno/"))
