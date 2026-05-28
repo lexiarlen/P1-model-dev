@@ -25,8 +25,7 @@ Only the last dump block is written.
 If the header line contains 'v_r', it is replaced with 'r' for easier visualization with the OVITO GUI.
 """
 
-from pathlib import os
-from path import Path
+from pathlib import os, Path
 
 MARKER = b"ITEM: TIMESTEP"
 ATOMS_HEADER_PREFIX = b"ITEM: ATOMS "
