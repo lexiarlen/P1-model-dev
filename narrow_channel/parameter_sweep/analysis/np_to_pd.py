@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# converts np arrays from analyze_ensemble.py to a parquet; ovito python package compatability workaround
+
 import argparse
 from pathlib import Path
 import os

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# saves .npy files from compute_max_strengths.py to one dataset
+# saves .npy files from compute_max_strengths.py to one dataset; workaround for ovito package incompatibility 
 
 import os
 import argparse

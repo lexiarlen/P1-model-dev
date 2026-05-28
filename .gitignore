@@ -2,6 +2,6 @@
 *.out
 *.lammps
 out_files/*
-get_last_dump.py
-run_get_last_dump.sbatch
+out_files_smno/*
+
 

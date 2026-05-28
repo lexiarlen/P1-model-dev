@@ -17,6 +17,8 @@ def moving_average(x, w):
 
 
 def first_sustained_decrease(y, tol_frac=0.005, min_grow_len=10, lookahead=1, buffer = 10):
+    # get failure from stress data; subtract buffer safely to make sure 
+    # getting slope from purely elastic regime
     y = np.asarray(y, float)
     if len(y) < min_grow_len + lookahead + 2:
         return len(y) - 1 - buffer
@@ -50,12 +52,14 @@ def slope_through_origin(x, y):
 
 
 def parse_kb_eps(path):
+    # file parsing
     m = re.search(r"kb_([0-9.eE+-]+)_eps_([0-9.eE+-]+)", path)
     if not m:
         return None, None
     return float(m.group(1)), float(m.group(2))
 
 def tau_xy_from_dump(dump_file, area):
+    # get shear stress from dumped data
     pipeline = import_file(dump_file)
     totals = []
     nframes = pipeline.source.num_frames

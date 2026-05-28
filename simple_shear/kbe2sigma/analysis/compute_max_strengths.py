@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# get maximum strengths acheived for each shear stress simulation
 
 import os
 import sys
