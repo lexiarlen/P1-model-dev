@@ -102,4 +102,9 @@ Figures C1, C2, C3, C4: narrow_channel/kc_checks
 
 # (4) Analyzing experiments
 
-All figures are generated using the Python notebook figures.ipynb in the main directory. 
+All figures are generated using the Python notebook figures.ipynb in the main directory.
+
+## Note on Sherlock SLURM paths
+
+The included `.sbatch` scripts reflect the Sherlock HPC layout used for the simulations. In this setup, source code is stored under `/home/groups/earlew/arlenlex/P1-model-dev`, while large simulation outputs and intermediate data are stored under `/scratch/groups/earlew/arlenlex/P1-model-dev`. Users running on another system should edit or export `PROJECT_DIR`, `SCRATCH_PROJECT_DIR`, `MODULEFILES_DIR`, and `CONDA_SH` before submitting jobs.
+
