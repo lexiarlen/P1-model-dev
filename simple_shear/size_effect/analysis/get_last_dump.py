@@ -22,7 +22,7 @@ parent/
         ...
 
 Only the last dump block is written.
-If the header line contains 'v_r', it is replaced with 'r'.
+If the header line contains 'v_r', it is replaced with 'r' for easier visualization with the OVITO GUI.
 """
 
 from pathlib import Path

@@ -16,7 +16,7 @@ source /home/groups/earlew/arlenlex/miniconda3-local/etc/profile.d/conda.sh
 conda activate ovito
 
 # ---------- paths ----------
-script_path="/home/groups/earlew/arlenlex/P1-model-dev/simple_shear/size_effect/get_cpuhours.py"
+script_path="/home/groups/earlew/arlenlex/P1-model-dev/simple_shear/size_effect/analysis/get_cpuhours.py"
 
 base_dir="/home/groups/earlew/arlenlex/P1-model-dev/simple_shear/size_effect/out_files_smno"
 

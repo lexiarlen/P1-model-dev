@@ -8,7 +8,7 @@
 # to prevent small overlaps. The post processing script create_atomfiles.py
 # will scale the particle positions accordingly. 
 
-# Index variables should be speceified in the bash script used to run 
+# Index variables should be specified in the bash script used to run 
 # this script. 
 
 ### -------------------------------- variables ---------------------------------- ###

@@ -71,7 +71,7 @@ def main():
         directory = os.path.join(outputdir, f'L{L}')
         if os.path.isdir(directory):
             for k, seed in enumerate(seeds):
-                Nstr = f"{natoms_list[j]:06d}"   # leading zeros: 6 digits
+                Nstr = f"{natoms_list[j]:06d}"   
                 base = f"N{Nstr}Dump_seed{seed}"
                 fpath = os.path.join(directory, f'{base}_shear.npy')
                 stress = np.load(fpath)
@@ -79,7 +79,7 @@ def main():
         else:
             print(f'path {directory} does not exist.', flush = True)
 
-    # ------- save as a tidy dataframe -------
+    # ------- save as a parquet -------
     # columns: strain, granularity, seed, stress
     df = (
         pd.DataFrame(

@@ -2,7 +2,7 @@
 #SBATCH --job-name=pack_nares
 #SBATCH --output=/home/groups/earlew/arlenlex/P1-model-dev/packing/out_files/%x_%A.out
 #SBATCH --error=/home/groups/earlew/arlenlex/P1-model-dev/packing/out_files/%x_%A.err
-#SBATCH --time=00:10:00
+#SBATCH --time=00:30:00
 #SBATCH -p serc
 #SBATCH -c 1
 

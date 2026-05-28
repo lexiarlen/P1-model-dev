@@ -17,7 +17,7 @@ def get_ts_from_data(fname, dt, y_cutoff=120e3):
     """
     Load LAMMPS dump and compute dcodt and avg vy in the upper half.
     Returns:
-      dcodt: |d(avg_co)/dt_frame|  (units per frame; consistent with your thresholds)
+      dcodt: |d(avg_co)/dt_frame|  (units per frame)
       avg_vy: mean vy in upper half (m/s)
       time: seconds
 
@@ -57,7 +57,7 @@ def get_ts_from_data(fname, dt, y_cutoff=120e3):
             if len(filtered) > 0:
                 avg_vy[frame] = float(np.mean(filtered))
 
-    dcodt = np.abs(np.gradient(avg_co, 36/500)) # fracture per hour - 36 hours, 500 dumps
+    dcodt = np.abs(np.gradient(avg_co, 36/500)) # 36 hours 500 dumps => dt = 36/500; units of h^-1
     time = timesteps * dt
     return dcodt, avg_vy, time
 
@@ -140,8 +140,6 @@ def compute_y(
         """
         Returns True if dcodt is below threshold for at least
         min_valley_duration_s between p_a and p_b.
-
-        This looks for a continuous run of samples below threshold.
         """
         lo, hi = sorted((int(p_a), int(p_b)))
 
@@ -233,7 +231,7 @@ def compute_y(
             )
 
     # ------------------------------------------------------------
-    # Single-peak / no-arch logic
+    # Single-peak: no arch vs stable arch logic
     # ------------------------------------------------------------
     p1 = int(peaks_sorted[0])
 
@@ -250,7 +248,6 @@ def compute_y(
         return y
 
     return y
-##### testing
 
 def get_u_vec(time_array, u_max, max_time):
     """NaN-propagating vectorized wind speed profile."""
@@ -269,7 +266,6 @@ def main():
     parser.add_argument("--J", type=int, required=True)
     parser.add_argument("--base_dir", type=str, required=True)
 
-    # optional
     parser.add_argument("--threshold", type=float, default=0.1)
     parser.add_argument("--second_ratio", type=float, default=0.1)
     parser.add_argument("--epsilon", type=float, default=0.01)
@@ -344,13 +340,13 @@ def main():
             epsilon=args.epsilon,
         )
 
-        # -------------------- figure generation --------------------
+        # -------------------- figure generation for quality control --------------------
         fig, ax = plt.subplots(figsize=(10, 4))
         line1, = ax.plot(time / 3600.0, dcodt, lw=4, color='gray', label='damage rate')
         ax.set_xlabel("time (hrs)", size='large')
         ax.tick_params(labelsize='large')
         ax.set_ylabel(r"$|\frac{d\text{Co#}}{dt}|$", size='xx-large', color='gray')
-        ax.set_ylim(-0.01, 1.8)
+        ax.set_ylim(-0.01, 2.5)
         ax.grid(True)
 
         ax2 = ax.twinx()

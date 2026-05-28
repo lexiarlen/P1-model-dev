@@ -26,34 +26,34 @@ atomfile_dir="/scratch/groups/earlew/arlenlex/P1-model-dev/packing/size-effect/e
 run_time="1800"
 num_dumps="500"
 
-# mkdir -p "${base_out}"
+mkdir -p "${base_out}"
 
-# for idx in "${!kbs[@]}"; do
-#     kb="${kbs[$idx]}"
-#     ep="${eps[$idx]}"
-#     dt="${dts[$idx]}"
+for idx in "${!kbs[@]}"; do
+    kb="${kbs[$idx]}"
+    ep="${eps[$idx]}"
+    dt="${dts[$idx]}"
 
-#     case_dir="${base_out}/kb_${kb}_eps_${ep}"
-#     mkdir -p "${case_dir}"
+    case_dir="${base_out}/kb_${kb}_eps_${ep}"
+    mkdir -p "${case_dir}"
 
-#     outfile="N${num_atoms}_s${s}_kb${kb}_eps${ep}.lammps"
+    outfile="N${num_atoms}_s${s}_kb${kb}_eps${ep}.lammps"
 
-#     echo "[RUN] kb=${kb} eps=${ep} dt=${dt} -> ${case_dir}/${outfile}"
+    echo "[RUN] kb=${kb} eps=${ep} dt=${dt} -> ${case_dir}/${outfile}"
 
-#     mpirun -n 2 lmp \
-#         -var L_pack "${L}" \
-#         -var natoms  "${num_atoms}" \
-#         -var knb "${kb}" \
-#         -var eps_crit "${ep}" \
-#         -var atomfile_dir "${atomfile_dir}" \
-#         -var out_dir "${case_dir}/" \
-#         -var outfile_name "${outfile}" \
-#         -var run_time "${run_time}" \
-#         -var num_dumps "${num_dumps}" \
-#         -var dt "${dt}" \
-#         -in /home/groups/earlew/arlenlex/P1-model-dev/simple_shear/in.shear \
-#         -log none
-# done
+    mpirun -n 2 lmp \
+        -var L_pack "${L}" \
+        -var natoms  "${num_atoms}" \
+        -var knb "${kb}" \
+        -var eps_crit "${ep}" \
+        -var atomfile_dir "${atomfile_dir}" \
+        -var out_dir "${case_dir}/" \
+        -var outfile_name "${outfile}" \
+        -var run_time "${run_time}" \
+        -var num_dumps "${num_dumps}" \
+        -var dt "${dt}" \
+        -in /home/groups/earlew/arlenlex/P1-model-dev/simple_shear/in.shear \
+        -log none
+done
 
 # 1) create numpy files for each ensemble member
 ml purge

@@ -6,7 +6,7 @@
 #SBATCH -p serc
 #SBATCH --array=1-1%50              # launcher will override with --array=1-${J}%${J}
 #SBATCH --nodes=1
-#SBATCH --ntasks=3                 # 4 MPI ranks per ensemble member
+#SBATCH --ntasks=3                 # 3 MPI ranks per ensemble member
 #SBATCH --cpus-per-task=1          # 1 CPU per MPI rank
 
 set -euo pipefail

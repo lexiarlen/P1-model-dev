@@ -2,7 +2,7 @@
 #SBATCH --job-name=making_packings_for_size_effect_ensemble_runs
 #SBATCH --output=/home/groups/earlew/arlenlex/P1-model-dev/packing/out_files/%x_%A.out
 #SBATCH --error=/home/groups/earlew/arlenlex/P1-model-dev/packing/out_files/%x_%A.err
-#SBATCH --time=2:30:00
+#SBATCH --time=24:00:00
 #SBATCH -p serc
 #SBATCH -c 2
 
@@ -11,7 +11,7 @@ module use /home/groups/earlew/arlenlex/.local/modulefiles
 module load lammps_lexi chemistry
 
 # 1) create 10 differently seeded packings for each domain size = 100e3/L
-Ls=(900) # 50 60 80 100 200 300 400 500 600 700 800)
+Ls=(50 60 80 100 200 300 400 500 600 700 800 900)
 seeds1=(9834 1825 2893 2283 1923 1289 8923 6573 9023 1098)               
 seeds2=(8302 3094 3894 1092 4999 5673 1927 2380 8095 8920)
 for L in "${Ls[@]}"; do
