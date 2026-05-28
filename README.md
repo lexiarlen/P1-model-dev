@@ -2,7 +2,7 @@ This repository contains the code needed to reproduce the results from [paper ci
 
 # (1) Building and Compiling LAMMPS
 
-My build of LAMMPS modifies the `bpm/spring` package to prevent failure in compression by modifying the `bond_bpm_spring.cpp` file in the BPM package. You can build LAMMPS from my GitHub [repository](https://github.com/lexiarlen/lammps.git). Alternatively, you can build the [latest version](https://github.com/lammps/lammps.git) of LAMMPS, replace the `bond_bpm_spring.cpp` file with the file from my repository, and recompile. This second option may be desirable because my repository is less likely to be up to date with the most recent version of LAMMPS.
+My build of LAMMPS modifies the `bpm/spring` package to prevent failure in compression by modifying the `bond_bpm_spring.cpp` file in the BPM package. The custom LAMMPS source code used for these simulations is archived on [Zenodo](https://doi.org/10.5281/zenodo.20434108). Alternatively, you can build the [latest version](https://github.com/lammps/lammps.git) of LAMMPS, replace the `bond_bpm_spring.cpp` file with the file from my repository, and recompile. 
 
 See the LAMMPS [Git installation documentation](https://docs.lammps.org/Install_git.html) for directions on how to clone LAMMPS from Git and build it on your machine. You will need to configure LAMMPS with the bonded particle, molecule, and granular packages. The instructions below worked for me on my machine, but this may vary.
 
